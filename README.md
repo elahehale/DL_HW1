@@ -10,12 +10,15 @@ Pipeline:
 ### Usage
 
 ```python
+
 from dataset import LaserData
+from sklearn.preprocessing import MinMaxScaler
 
 dataset = LaserData(
     path="data/Xtrain.mat",
     split_ratio=0.8,
-    sequence_length=20
+    sequence_length=20,
+    scaler=MinMaxScaler()
 )
 
 train_loader, val_loader = dataset.get_loaders(batch_size=32)
