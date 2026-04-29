@@ -6,14 +6,18 @@ from torch.utils.data import TensorDataset, DataLoader
 
 
 class LaserData:
-    def __init__(self, path="data/Xtrain.mat", split_ratio = 0.8, sequence_length = 20, scaler = None):
+    def __init__(self, path="data/Xtrain.mat", split_ratio = 0.8, sequence_length = 20, scaler = None, mode="train", key = "Xtrain"):
         data = scipy.io.loadmat(path)
         # '__header__', '__version__', '__globals__', 'Xtrain'
-        laser_data = data["Xtrain"]
+        laser_data = data[key]
         self.raw_data = laser_data.astype(np.float32)
 
         self.split_ratio = split_ratio
         self.sequence_length = sequence_length
+        self.mode = mode
+
+        if self.mode == "test" and scaler is None:
+            raise ValueError("test mode requires a fitted scaler from training.")
 
         if scaler is not None:
             self.scaler = scaler
@@ -27,11 +31,17 @@ class LaserData:
         self.train_labels = None
         self.val_sequences = None
         self.val_labels = None
-        self._prepare()
 
+        self._prepare()
+    # ----------- Internal Functions -------------
     def _prepare(self):
-        self._split_train_val()
-        self._convert_to_sequences()
+        if self.mode == "train":
+            self._split_train_val()
+            self.train_sequences, self.train_labels = self._create_sequence(self.train_raw)
+            self.val_sequences, self.val_labels = self._create_sequence(self.val_raw)
+        elif self.mode == "test":
+            self.test_raw = self.scaler.transform(self.raw_data)
+            self.test_sequences, self.test_labels = self._create_sequence(self.test_raw)
 
     def _split_train_val(self):
         split_idx = int(self.split_ratio * len(self.raw_data))
@@ -47,40 +57,47 @@ class LaserData:
 
     def _create_sequence(self, data):
         X, y = [], []
-        data_legth = len(data)
+        data_length = len(data)
         seq_len = self.sequence_length
-        for i in range(data_legth - seq_len):
+        for i in range(data_length - seq_len):
             X.append(data[i:i + seq_len])
             y.append(data[i + seq_len])
         return (torch.tensor(np.array(X), dtype=torch.float32),
                 torch.tensor(np.array(y), dtype=torch.float32))
 
-    def _convert_to_sequences(self):
-        self.train_sequences, self.train_labels = self._create_sequence(self.train_raw)
-        self.val_sequences, self.val_labels = self._create_sequence(self.val_raw)
+    # -------------- APIs ----------------
 
-    def get_train_data(self):
-        return self.train_sequences, self.train_labels
-
-    def get_val_data(self):
-        return self.val_sequences, self.val_labels
+    def get_data(self):
+        if self.mode == "train":
+            return self.train_sequences, self.train_labels, self.val_sequences, self.val_labels
+        else:
+            return self.test_sequences, self.test_labels
 
     def get_scaler(self):
         return self.scaler
 
     def get_loaders(self, batch_size=32):
-        train_loader = DataLoader(
-            TensorDataset(self.train_sequences, self.train_labels),
-            batch_size=batch_size,
-            shuffle=True
-        )
+        if self.mode == "train":
+            train_loader = DataLoader(
+                TensorDataset(self.train_sequences, self.train_labels),
+                batch_size=batch_size,
+                shuffle=True
+            )
 
-        val_loader = DataLoader(
-            TensorDataset(self.val_sequences, self.val_labels),
-            batch_size=batch_size,
-            shuffle=False
-        )
-        return train_loader, val_loader
+            val_loader = DataLoader(
+                TensorDataset(self.val_sequences, self.val_labels),
+                batch_size=batch_size,
+                shuffle=False
+            )
+            return train_loader, val_loader
+        else:
+            test_loader = DataLoader(
+                TensorDataset(self.test_sequences, self.test_labels),
+                batch_size=batch_size,
+                shuffle=False
+            )
+            return test_loader
+
 
 
 
@@ -92,3 +109,6 @@ if __name__ == "__main__":
 
     print(X_train.shape)
     print(y_train.shape)
+    # ouput:
+    # torch.Size([780, 20, 1])
+    # torch.Size([780, 1])
