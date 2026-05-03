@@ -33,3 +33,9 @@ X_train, y_train = train_loader.dataset.tensors
 print(X_train.shape)  # (samples, sequence_length, 1)
 print(y_train.shape)  # (samples, 1)
 ```
+
+## Training
+
+```powershell
+python -m trainings.lstm_training 
+```

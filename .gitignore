@@ -3,5 +3,7 @@ __pycache__/
 venv/
 venv
 data
-
-
+pyproject.toml
+uv.lock
+*.pdf
+out

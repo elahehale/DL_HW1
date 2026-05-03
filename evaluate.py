@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def evaluate_model(model, test_loader, device, dataset, draw_predicted_vs_true=True):
     model.eval()
 
@@ -21,12 +22,11 @@ def evaluate_model(model, test_loader, device, dataset, draw_predicted_vs_true=T
     print(pred_original[:10])
     print(true_original[:10])
 
-
     if draw_predicted_vs_true:
         draw_predicted_vs_true_plot(model, test_loader, dataset, device)
 
 
-def draw_predicted_vs_true_plot(model, loader, dataset, device):
+def draw_predicted_vs_true_plot(model, loader, dataset, device, overlap_tolerance=None):
     model.eval()
 
     preds = []
@@ -48,9 +48,24 @@ def draw_predicted_vs_true_plot(model, loader, dataset, device):
     preds_original = dataset.get_scaler().inverse_transform(preds)
     trues_original = dataset.get_scaler().inverse_transform(trues)
 
+    if overlap_tolerance is None:
+        value_range = np.ptp(trues_original)
+        overlap_tolerance = max(value_range * 0.04, 1e-8)
+
+    overlap_mask = np.abs(preds_original - trues_original) <= overlap_tolerance
+    overlap_values = np.where(
+        overlap_mask, (preds_original + trues_original) / 2, np.nan
+    )
+
     plt.figure(figsize=(12, 5))
-    plt.plot(trues_original, label="True")
-    plt.plot(preds_original, label="Predicted")
+    plt.plot(trues_original, label="True", color="tab:blue", linewidth=1)
+    plt.plot(preds_original, label="Predicted", color="tab:orange", linewidth=1)
+    plt.plot(
+        overlap_values,
+        label=f"Overlap (<= {overlap_tolerance:.4g})",
+        color="tab:green",
+        linewidth=2,
+    )
     plt.legend()
     plt.title("LSTM Prediction vs True Values")
     plt.xlabel("Time step")
