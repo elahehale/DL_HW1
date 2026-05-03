@@ -1,7 +1,22 @@
 import torch
 import os
+from torch.nn.utils import clip_grad_norm_
+from models.base_model import LaserBaseModule
 
-def train_model(epochs, model, optimizer, criterion, train_loader, val_loader, device, version = "", save_model = True):
+
+def train_model(
+    epochs,
+    model: LaserBaseModule,
+    optimizer,
+    criterion,
+    train_loader,
+    val_loader,
+    device,
+    scheduler=None,
+    clip_grad_norm=None,
+    version="",
+    save_model=True,
+):
 
     for epoch in range(epochs):
         model.train()
@@ -17,6 +32,10 @@ def train_model(epochs, model, optimizer, criterion, train_loader, val_loader, d
             loss = criterion(y_pred, y_batch)
 
             loss.backward()
+
+            if clip_grad_norm is not None:
+                clip_grad_norm_(model.parameters(), max_norm=clip_grad_norm)
+
             optimizer.step()
 
             train_loss += loss.item()
@@ -44,11 +63,16 @@ def train_model(epochs, model, optimizer, criterion, train_loader, val_loader, d
             f"Val Loss: {val_loss:.6f}"
         )
 
+        if scheduler is not None:
+            scheduler.step(val_loss)
+
     if save_model:
         X_train, _ = train_loader.dataset.tensors
         seq_len = X_train.shape[1]
-        model_name = f"{model.__class__.__name__}_h{model.lstm.hidden_size}_l{model.lstm.num_layers}_"
-        opt_label = f"{optimizer.__class__.__name__}_lr{optimizer.param_groups[0]['lr']}"
+        model_name = model.model_name()
+        opt_label = (
+            f"{optimizer.__class__.__name__}_lr{optimizer.param_groups[0]['lr']}"
+        )
         config = f"{epochs}epochs_{seq_len}seq_{opt_label}_"
         save_path = f"out/models/{model_name}{config}{version}.pth"
 
