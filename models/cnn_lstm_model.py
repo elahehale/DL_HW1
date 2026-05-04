@@ -19,7 +19,6 @@ class LaserCNNLSTM(LaserBaseModule):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
-        # same length shrink idea as LaserCNN (two convs, no padding)
         conv_len = seq_length - 2 * (kernel_size - 1)
         if conv_len < 1:
             raise ValueError("seq_length too small for this kernel_size")
@@ -44,7 +43,6 @@ class LaserCNNLSTM(LaserBaseModule):
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
-        # x: [batch, seq_len, 1]
         x = x.permute(0, 2, 1)
         x = self.conv(x)
         x = x.permute(0, 2, 1)

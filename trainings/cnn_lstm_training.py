@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-# fix imports when you run `python trainings/cnn_lstm_training.py` from project folder
 _root = Path(__file__).resolve().parent.parent
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
@@ -32,5 +31,4 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 epochs = 60
 
 train_model(epochs, model, optimizer, criterion, train_loader, val_loader, device)
-# this should be test loader
 evaluate_model(model, val_loader, device, dataset)
