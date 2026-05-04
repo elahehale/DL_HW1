@@ -67,7 +67,7 @@ def draw_predicted_vs_true_plot(model, loader, dataset, device, overlap_toleranc
         linewidth=2,
     )
     plt.legend()
-    plt.title("LSTM Prediction vs True Values")
+    plt.title(f"{model.model_name()} Prediction vs True Values")
     plt.xlabel("Time step")
     plt.ylabel("Laser value")
     plt.show()
