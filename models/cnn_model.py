@@ -18,10 +18,19 @@ class LaserCNN(LaserBaseModule):
                 in_channels=input_channels,
                 out_channels=num_filters,
                 kernel_size=kernel_size
-            )
+            ),
+            nn.ReLU(),
+            nn.Conv1d(num_filters, num_filters*2, kernel_size),
+            nn.ReLU(),
+            nn.Flatten()
         )
-        
-       
+        conv_output_length = seq_length - 2*(kernel_size -1)
+
+        self.fc = nn.Sequential(
+            nn.Linear((num_filters*2)* conv_output_length, 32),
+            nn.ReLU(),
+            nn.Linear(32, output_size)
+        )
 
     def forward(self, x):
         # needed: [batch_size, 1 seq_length]
