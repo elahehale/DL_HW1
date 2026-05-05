@@ -14,6 +14,7 @@ class LaserCNNLSTM(LaserBaseModule):
         kernel_size=3,
         dropout=0.1,
         fc_dropout=0.1,
+        layer_norm=False,
     ):
         super().__init__()
 
@@ -43,6 +44,7 @@ class LaserCNNLSTM(LaserBaseModule):
             batch_first=True,
             dropout=dropout if num_layers > 1 else 0.0,
         )
+        self.layer_norm = nn.LayerNorm(hidden_size) if layer_norm else None
         self.dropout = nn.Dropout(fc_dropout)
         self.fc = nn.Linear(hidden_size, output_size)
 
@@ -53,5 +55,7 @@ class LaserCNNLSTM(LaserBaseModule):
 
         out, _ = self.lstm(x)
         out = out[:, -1, :]
+        if self.layer_norm:
+            out = self.layer_norm(out)
         out = self.dropout(out)
         return self.fc(out)

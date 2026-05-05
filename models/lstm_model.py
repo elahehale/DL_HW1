@@ -30,7 +30,6 @@ class LaserLSTM(LaserBaseModule):
         )
         self.layer_norm = nn.LayerNorm(hidden_size) if layer_norm else None
         self.fc_dropout_layer = nn.Dropout(fc_dropout)
-
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
