@@ -12,6 +12,8 @@ class LaserCNNLSTM(LaserBaseModule):
         output_size=1,
         num_filters=64,
         kernel_size=3,
+        dropout=0.1,
+        fc_dropout=0.1,
     ):
         super().__init__()
 
@@ -27,9 +29,11 @@ class LaserCNNLSTM(LaserBaseModule):
             nn.Conv1d(input_channels, num_filters, kernel_size),
             nn.BatchNorm1d(num_filters),
             nn.ReLU(),
+            nn.Dropout1d(dropout),
             nn.Conv1d(num_filters, num_filters * 2, kernel_size),
             nn.BatchNorm1d(num_filters * 2),
             nn.ReLU(),
+            nn.Dropout1d(dropout),
         )
 
         self.lstm = nn.LSTM(
@@ -37,9 +41,9 @@ class LaserCNNLSTM(LaserBaseModule):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=0.2 if num_layers > 1 else 0.0,
+            dropout=dropout if num_layers > 1 else 0.0,
         )
-        self.dropout = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(fc_dropout)
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):

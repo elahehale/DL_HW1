@@ -2,6 +2,7 @@ import torch
 import os
 from torch.nn.utils import clip_grad_norm_
 from models.base_model import LaserBaseModule
+from util import clear_current_line
 
 
 def train_model(
@@ -15,7 +16,7 @@ def train_model(
     scheduler=None,
     clip_grad_norm=None,
     version="",
-    save_model=True,
+    save_model=False,
 ):
 
     for epoch in range(epochs):
@@ -58,9 +59,11 @@ def train_model(
         val_loss /= len(val_loader)
 
         print(
-            f"Epoch [{epoch+1}/{epochs}] "
+            f"\rEpoch [{epoch+1}/{epochs}] "
             f"Train Loss: {train_loss:.6f} "
-            f"Val Loss: {val_loss:.6f}"
+            f"Val Loss: {val_loss:.6f}",
+            end="",
+            flush=True,
         )
 
         if scheduler is not None:
@@ -79,3 +82,6 @@ def train_model(
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         torch.save(model.state_dict(), save_path)
         print(f"{version} model saved.")
+
+    clear_current_line()
+    return model
