@@ -71,7 +71,7 @@ def train_model(
         seq_len = X_train.shape[1]
         model_name = model.model_name()
         opt_label = (
-            f"{optimizer.__class__.__name__}_lr{optimizer.param_groups[0]['lr']}"
+            f"{optimizer.__class__.__name__}_lr{optimizer.param_groups[0]['lr']}_"
         )
         config = f"{epochs}epochs_{seq_len}seq_{opt_label}_"
         save_path = f"out/models/{model_name}{config}{version}.pth"
