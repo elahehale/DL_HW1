@@ -2,7 +2,7 @@ import torch.nn as nn
 from models.base_model import LaserBaseModule
 
 class LaserCNN(LaserBaseModule):
-    def __init__(self, seq_length=20, input_channels=1, 
+    def __init__(self, seq_length=20, input_channels=1,  
                  output_size=1, num_filters=32, kernel_size=3):
         super().__init__()
 
@@ -21,7 +21,6 @@ class LaserCNN(LaserBaseModule):
             ),
             nn.ReLU(),
             nn.Conv1d(num_filters, num_filters*2, kernel_size),
-            nn.ReLU(),
             nn.Flatten()
         )
         conv_output_length = seq_length - 2*(kernel_size -1)
