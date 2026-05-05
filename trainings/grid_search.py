@@ -1,5 +1,4 @@
 import torch
-import os
 from torch import nn
 from dataset import LaserData
 from models.cnn_lstm_model import LaserCNNLSTM
@@ -19,95 +18,87 @@ from util import save_model
 sequence_lengths = [25, 50]
 print(f"{sequence_lengths=}")
 
-dropouts = [0, 0.1, 0.3]
+dropouts = [0, 0.1, 0.2]
 print(f"{dropouts=}")
 
-# fc_dropouts = [0, 0.1, 0.2, 0.3]
-# print(f"{fc_dropouts=}")
+fc_dropouts = [0, 0.1, 0.2]
+print(f"{fc_dropouts=}")
 
 ##========================= gru & lstm hyperparameters ========================
-hidden_sizes = [16, 32]
+hidden_sizes = [16, 32, 64]
 print(f"{hidden_sizes=}")
 
-num_layers = [1, 2, 3]
+num_layers = [2, 3, 4]
 print(f"{num_layers=}")
 
-# layernorm_options = [True, False]
-# print(f"{layernorm_options=}")
+layernorm_options = [True]
+print(f"{layernorm_options=}")
 
 # ============================ CNN hyperparameters =============================
 kernel_sizes = [3, 5]
 print(f"{kernel_sizes=}")
 
-num_filters = [16, 32]
+num_filters = [16, 32, 64]
 print(f"{num_filters=}")
 
 # ========================= training hyperparameters ===========================
-# epochs = [40, 60]
-# print(f"{epochs=}")
+epochs = [60]
+print(f"{epochs=}")
 
-# optimizers = ["Adam", "AdamW"]
-# print(f"{optimizers=}")
+optimizers = [AdamW]
+print(f"{optimizers=}")
 
-# learning_rates = [1e-4, 5e-4, 1e-3]
-# print(f"{learning_rates=}")
+learning_rates = [1e-3]
+print(f"{learning_rates=}")
 
-# weight_decays = [0, 1e-6, 1e-4]
-# print(f"{weight_decays=}")
+weight_decays = [0, 1e-5, 1e-4]
+print(f"{weight_decays=}")
 
-scheduler_factors = [0.5, 0.75, 1]  # 1 is equivalent to no scheduler
+scheduler_factors = [0.5, 1]  # 1 is equivalent to no scheduler
 print(f"{scheduler_factors=}")
 
-# scheduler_patiences = [5, 7]
-# print(f"{scheduler_patiences=}")
-
-print(f"Total combinations: {
-        len(sequence_lengths) 
-        * len(dropouts) 
-        # * len(fc_dropouts) 
-        * len(hidden_sizes) 
-        * len(num_layers) 
-        # * len(layernorm_options) 
-        * len(kernel_sizes) * len(num_filters) 
-        # * len(epochs) 
-        # * len(optimizers) 
-        # * len(learning_rates) 
-        # * len(weight_decays) 
-        * len(scheduler_factors) 
-        # * len(scheduler_patiences)
-        }")
+scheduler_patiences = [5]
+print(f"{scheduler_patiences=}")
 
 ################################ grid search ##################################
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-epochs = 60
 criterion = nn.MSELoss()
+batch_size = 512
 
 common_total = (
     len(sequence_lengths)
     * len(dropouts)
+    * len(fc_dropouts)
+    * len(epochs)
+    * len(optimizers)
+    * len(learning_rates)
+    * len(weight_decays)
     * len(scheduler_factors)
-    # * len(scheduler_patiences)
+    * len(scheduler_patiences)
 )
 
 cnn_count = 0
 cnn_total = common_total * len(kernel_sizes) * len(num_filters)
 
 lstm_count = 0
-lstm_total = common_total * len(hidden_sizes) * len(num_layers)
+lstm_total = common_total * len(hidden_sizes) * len(num_layers) * len(layernorm_options)
 
 gru_count = 0
-gru_total = common_total * len(hidden_sizes) * len(num_layers)
+gru_total = common_total * len(hidden_sizes) * len(num_layers) * len(layernorm_options)
 
 cnn_lstm_count = 0
 cnn_lstm_total = (
     common_total
     * len(hidden_sizes)
     * len(num_layers)
+    * len(layernorm_options)
     * len(kernel_sizes)
     * len(num_filters)
 )
+
+print(f"Total model trainings: {cnn_total + lstm_total + gru_total + cnn_lstm_total}")
 
 best_cnn_mse = float("inf")
 best_cnn_model = None
@@ -127,18 +118,30 @@ best_cnn_lstm_model_name = ""
 
 for seq_len in sequence_lengths:
     dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len)
-    train_loader, val_loader = dataset.get_loaders(batch_size=32)
+    train_loader, val_loader = dataset.get_loaders(batch_size=batch_size)
 
     # common hyperparameters
     for (
         dropout,
+        fc_dropout,
+        epoch_count,
+        optimizer_cls,
+        learning_rate,
+        weight_decay,
         scheduler_factor,
-        # scheduler_patience,
+        scheduler_patience,
     ) in product(
         dropouts,
+        fc_dropouts,
+        epochs,
+        optimizers,
+        learning_rates,
+        weight_decays,
         scheduler_factors,
-        # scheduler_patiences,
+        scheduler_patiences,
     ):
+        optimizer_name = optimizer_cls.__name__
+
         # CNN hyperparameters
         for kernel_size, num_filter in product(kernel_sizes, num_filters):
             model = LaserCNN(
@@ -146,26 +149,28 @@ for seq_len in sequence_lengths:
                 num_filters=num_filter,
                 kernel_size=kernel_size,
                 dropout=dropout,
-                fc_dropout=dropout,
+                fc_dropout=fc_dropout,
             ).to(device)
             cnn_count += 1
-            model_name = f"CNN_seq{seq_len}_drop{dropout}_kern{kernel_size}_filt{num_filter}_schedf{scheduler_factor}"
+            model_name = f"CNN_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_kern{kernel_size}_filt{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
             print(f"Training CNN model ({cnn_count}/{cnn_total}) {model_name}")
 
-            optimizer = AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+            optimizer = optimizer_cls(
+                model.parameters(), lr=learning_rate, weight_decay=weight_decay
+            )
             scheduler = (
                 ReduceLROnPlateau(
                     optimizer,
                     mode="min",
                     factor=scheduler_factor,
-                    patience=5,
+                    patience=scheduler_patience,
                 )
                 if scheduler_factor < 1
                 else None
             )
 
             model = train_model(
-                epochs,
+                epoch_count,
                 model,
                 optimizer,
                 criterion,
@@ -186,34 +191,38 @@ for seq_len in sequence_lengths:
                 best_cnn_model_name = model_name
 
         # lstm hyperparameters
-        for hidden_size, num_layer in product(hidden_sizes, num_layers):
+        for hidden_size, num_layer, layer_norm in product(
+            hidden_sizes, num_layers, layernorm_options
+        ):
             model = LaserLSTM(
                 input_size=1,
                 hidden_size=hidden_size,
                 num_layers=num_layer,
                 output_size=1,
                 dropout=dropout,
-                fc_dropout=dropout,
-                layer_norm=True,
+                fc_dropout=fc_dropout,
+                layer_norm=layer_norm,
             ).to(device)
             lstm_count += 1
-            model_name = f"LSTM_seq{seq_len}_drop{dropout}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}"
+            model_name = f"LSTM_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}_schedp{scheduler_patience}"
             print(f"Training LSTM model ({lstm_count}/{lstm_total}) {model_name}")
 
-            optimizer = AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+            optimizer = optimizer_cls(
+                model.parameters(), lr=learning_rate, weight_decay=weight_decay
+            )
             scheduler = (
                 ReduceLROnPlateau(
                     optimizer,
                     mode="min",
                     factor=scheduler_factor,
-                    patience=5,
+                    patience=scheduler_patience,
                 )
                 if scheduler_factor < 1
                 else None
             )
 
             model = train_model(
-                epochs,
+                epoch_count,
                 model,
                 optimizer,
                 criterion,
@@ -234,34 +243,38 @@ for seq_len in sequence_lengths:
                 best_lstm_model_name = model_name
 
         # gru hyperparameters
-        for hidden_size, num_layer in product(hidden_sizes, num_layers):
+        for hidden_size, num_layer, layer_norm in product(
+            hidden_sizes, num_layers, layernorm_options
+        ):
             model = LaserGRU(
                 input_size=1,
                 hidden_size=hidden_size,
                 num_layers=num_layer,
                 output_size=1,
                 dropout=dropout,
-                fc_dropout=dropout,
-                layer_norm=True,
+                fc_dropout=fc_dropout,
+                layer_norm=layer_norm,
             ).to(device)
             gru_count += 1
-            model_name = f"GRU_seq{seq_len}_drop{dropout}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}"
+            model_name = f"GRU_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}_schedp{scheduler_patience}"
             print(f"Training GRU model ({gru_count}/{gru_total}) {model_name}")
 
-            optimizer = AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+            optimizer = optimizer_cls(
+                model.parameters(), lr=learning_rate, weight_decay=weight_decay
+            )
             scheduler = (
                 ReduceLROnPlateau(
                     optimizer,
                     mode="min",
                     factor=scheduler_factor,
-                    patience=5,
+                    patience=scheduler_patience,
                 )
                 if scheduler_factor < 1
                 else None
             )
 
             model = train_model(
-                epochs,
+                epoch_count,
                 model,
                 optimizer,
                 criterion,
@@ -282,8 +295,8 @@ for seq_len in sequence_lengths:
                 best_gru_model_name = model_name
 
         # cnn-lstm hyperparameters
-        for hidden_size, num_layer, kernel_size, num_filter in product(
-            hidden_sizes, num_layers, kernel_sizes, num_filters
+        for hidden_size, num_layer, layer_norm, kernel_size, num_filter in product(
+            hidden_sizes, num_layers, layernorm_options, kernel_sizes, num_filters
         ):
             model = LaserCNNLSTM(
                 seq_length=seq_len,
@@ -294,28 +307,31 @@ for seq_len in sequence_lengths:
                 num_filters=num_filter,
                 kernel_size=kernel_size,
                 dropout=dropout,
-                fc_dropout=dropout,
+                fc_dropout=fc_dropout,
+                layer_norm=layer_norm,
             ).to(device)
             cnn_lstm_count += 1
-            model_name = f"CNNLSTM_seq{seq_len}_drop{dropout}_hid{hidden_size}_layers{num_layer}_kernel{kernel_size}_filters{num_filter}_schedf{scheduler_factor}"
+            model_name = f"CNNLSTM_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_kernel{kernel_size}_filters{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
             print(
                 f"Training CNNLSTM model ({cnn_lstm_count}/{cnn_lstm_total}) {model_name}"
             )
 
-            optimizer = AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+            optimizer = optimizer_cls(
+                model.parameters(), lr=learning_rate, weight_decay=weight_decay
+            )
             scheduler = (
                 ReduceLROnPlateau(
                     optimizer,
                     mode="min",
                     factor=scheduler_factor,
-                    patience=5,
+                    patience=scheduler_patience,
                 )
                 if scheduler_factor < 1
                 else None
             )
 
             model = train_model(
-                epochs,
+                epoch_count,
                 model,
                 optimizer,
                 criterion,
