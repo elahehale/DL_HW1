@@ -1,6 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
 def evaluate_model(model, test_loader, device, dataset, draw_predicted_vs_true=True):
@@ -18,12 +19,22 @@ def evaluate_model(model, test_loader, device, dataset, draw_predicted_vs_true=T
     pred_original = scaler.inverse_transform(pred_scaled)
     true_original = scaler.inverse_transform(true_scaled)
 
+    # computing MAE and MSE
+
+    mae = mean_absolute_error(true_original,pred_original)
+    mse = mean_squared_error(true_original,pred_original)
+    print(f"\nModel: {model.model_name()}")
+    print(f"MAE: {mae:.4f}")
+    print(f"MSE: {mse:.4f}")
+
     # just to see some examples
     print(pred_original[:10])
     print(true_original[:10])
 
     if draw_predicted_vs_true:
         draw_predicted_vs_true_plot(model, test_loader, dataset, device)
+    
+    return mae, mse
 
 
 def draw_predicted_vs_true_plot(model, loader, dataset, device, overlap_tolerance=None):
