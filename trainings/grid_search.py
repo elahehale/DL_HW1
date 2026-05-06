@@ -9,24 +9,27 @@ from itertools import product
 from models.cnn_model import LaserCNN
 from train import train_model
 from evaluate import evaluate_model
-from torch.optim import AdamW
+from torch.optim import AdamW, SGD, RMSprop
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from util import *
 
 ############################ Hyperparameter options ###########################
 
 # ======================= common model hyperparameters =========================
-sequence_lengths = [25, 50]
+sequence_lengths = [25, 30, 35, 40, 45, 50]
 print(f"{sequence_lengths=}")
 
-dropouts = [0, 0.1, 0.2]
-print(f"{dropouts=}")
+lstm_dropouts = [0, 0.1]
+print(f"{lstm_dropouts=}")
 
-fc_dropouts = [0, 0.1, 0.2]
+cnn_dropouts = [0, 0.1]
+print(f"{cnn_dropouts=}")
+
+fc_dropouts = [0, 0.1]
 print(f"{fc_dropouts=}")
 
 ##========================= gru & lstm hyperparameters ========================
-hidden_sizes = [16, 32, 64]
+hidden_sizes = [16, 32]
 print(f"{hidden_sizes=}")
 
 num_layers = [2, 3, 4]
@@ -39,14 +42,14 @@ print(f"{layernorm_options=}")
 kernel_sizes = [3, 5]
 print(f"{kernel_sizes=}")
 
-num_filters = [16, 32, 64]
+num_filters = [16, 32]
 print(f"{num_filters=}")
 
 # ========================= training hyperparameters ===========================
 epochs = [60]
 print(f"{epochs=}")
 
-optimizers = [AdamW]
+optimizers = [AdamW, RMSprop]
 print(f"{optimizers=}")
 
 learning_rates = [1e-3]
@@ -55,7 +58,7 @@ print(f"{learning_rates=}")
 weight_decays = [1e-5, 1e-4]
 print(f"{weight_decays=}")
 
-scheduler_factors = [0.5, 0.75]  # 1 is equivalent to no scheduler
+scheduler_factors = [0.75]  # 1 is equivalent to no scheduler
 print(f"{scheduler_factors=}")
 
 scheduler_patiences = [5]
@@ -70,7 +73,6 @@ batch_size = 32
 
 common_total = (
     len(sequence_lengths)
-    * len(dropouts)
     * len(fc_dropouts)
     * len(epochs)
     * len(optimizers)
@@ -81,17 +83,31 @@ common_total = (
 )
 
 cnn_count = 0
-cnn_total = common_total * len(kernel_sizes) * len(num_filters)
+cnn_total = common_total * len(cnn_dropouts) * len(kernel_sizes) * len(num_filters)
 
 lstm_count = 0
-lstm_total = common_total * len(hidden_sizes) * len(num_layers) * len(layernorm_options)
+lstm_total = (
+    common_total
+    * len(lstm_dropouts)
+    * len(hidden_sizes)
+    * len(num_layers)
+    * len(layernorm_options)
+)
 
 gru_count = 0
-gru_total = common_total * len(hidden_sizes) * len(num_layers) * len(layernorm_options)
+gru_total = (
+    common_total
+    * len(lstm_dropouts)
+    * len(hidden_sizes)
+    * len(num_layers)
+    * len(layernorm_options)
+)
 
 cnn_lstm_count = 0
 cnn_lstm_total = (
     common_total
+    * len(cnn_dropouts)
+    * len(lstm_dropouts)
     * len(hidden_sizes)
     * len(num_layers)
     * len(layernorm_options)
@@ -146,7 +162,6 @@ for seq_len in sequence_lengths:
 
     # common hyperparameters
     for (
-        dropout,
         fc_dropout,
         epoch_count,
         optimizer_cls,
@@ -155,7 +170,6 @@ for seq_len in sequence_lengths:
         scheduler_factor,
         scheduler_patience,
     ) in product(
-        dropouts,
         fc_dropouts,
         epochs,
         optimizers,
@@ -167,16 +181,18 @@ for seq_len in sequence_lengths:
         optimizer_name = optimizer_cls.__name__
 
         # CNN hyperparameters
-        for kernel_size, num_filter in product(kernel_sizes, num_filters):
+        for cnn_dropout, kernel_size, num_filter in product(
+            cnn_dropouts, kernel_sizes, num_filters
+        ):
             model = LaserCNN(
                 seq_length=seq_len,
                 num_filters=num_filter,
                 kernel_size=kernel_size,
-                dropout=dropout,
+                dropout=cnn_dropout,
                 fc_dropout=fc_dropout,
             ).to(device)
             cnn_count += 1
-            model_name = f"CNN_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_kern{kernel_size}_filt{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
+            model_name = f"CNN_seq{seq_len}_cnndrop{cnn_dropout}_fcdrop{fc_dropout}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_kern{kernel_size}_filt{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
             print(
                 f"{'='*100}\nTraining CNN model ({cnn_count}/{cnn_total}) {model_name}"
             )
@@ -218,20 +234,20 @@ for seq_len in sequence_lengths:
                 best_cnn_model_name = model_name
 
         # lstm hyperparameters
-        for hidden_size, num_layer, layer_norm in product(
-            hidden_sizes, num_layers, layernorm_options
+        for lstm_dropout, hidden_size, num_layer, layer_norm in product(
+            lstm_dropouts, hidden_sizes, num_layers, layernorm_options
         ):
             model = LaserLSTM(
                 input_size=1,
                 hidden_size=hidden_size,
                 num_layers=num_layer,
                 output_size=1,
-                dropout=dropout,
+                dropout=lstm_dropout,
                 fc_dropout=fc_dropout,
                 layer_norm=layer_norm,
             ).to(device)
             lstm_count += 1
-            model_name = f"LSTM_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}_schedp{scheduler_patience}"
+            model_name = f"LSTM_seq{seq_len}_lstmdrop{lstm_dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}_schedp{scheduler_patience}"
             print(
                 f"{'='*100}\nTraining LSTM model ({lstm_count}/{lstm_total}) {model_name}"
             )
@@ -273,20 +289,20 @@ for seq_len in sequence_lengths:
                 best_lstm_model_name = model_name
 
         # gru hyperparameters
-        for hidden_size, num_layer, layer_norm in product(
-            hidden_sizes, num_layers, layernorm_options
+        for lstm_dropout, hidden_size, num_layer, layer_norm in product(
+            lstm_dropouts, hidden_sizes, num_layers, layernorm_options
         ):
             model = LaserGRU(
                 input_size=1,
                 hidden_size=hidden_size,
                 num_layers=num_layer,
                 output_size=1,
-                dropout=dropout,
+                dropout=lstm_dropout,
                 fc_dropout=fc_dropout,
                 layer_norm=layer_norm,
             ).to(device)
             gru_count += 1
-            model_name = f"GRU_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}_schedp{scheduler_patience}"
+            model_name = f"GRU_seq{seq_len}_lstmdrop{lstm_dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}_schedp{scheduler_patience}"
             print(
                 f"{'='*100}\nTraining GRU model ({gru_count}/{gru_total}) {model_name}"
             )
@@ -328,8 +344,22 @@ for seq_len in sequence_lengths:
                 best_gru_model_name = model_name
 
         # cnn-lstm hyperparameters
-        for hidden_size, num_layer, layer_norm, kernel_size, num_filter in product(
-            hidden_sizes, num_layers, layernorm_options, kernel_sizes, num_filters
+        for (
+            cnn_dropout,
+            lstm_dropout,
+            hidden_size,
+            num_layer,
+            layer_norm,
+            kernel_size,
+            num_filter,
+        ) in product(
+            cnn_dropouts,
+            lstm_dropouts,
+            hidden_sizes,
+            num_layers,
+            layernorm_options,
+            kernel_sizes,
+            num_filters,
         ):
             model = LaserCNNLSTM(
                 seq_length=seq_len,
@@ -339,12 +369,13 @@ for seq_len in sequence_lengths:
                 output_size=1,
                 num_filters=num_filter,
                 kernel_size=kernel_size,
-                dropout=dropout,
+                cnn_dropout=cnn_dropout,
+                lstm_dropout=lstm_dropout,
                 fc_dropout=fc_dropout,
                 layer_norm=layer_norm,
             ).to(device)
             cnn_lstm_count += 1
-            model_name = f"CNNLSTM_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_kernel{kernel_size}_filters{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
+            model_name = f"CNNLSTM_seq{seq_len}_cnndrop{cnn_dropout}_lstmdrop{lstm_dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_kernel{kernel_size}_filters{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
             print(
                 f"{'='*100}\nTraining CNNLSTM model ({cnn_lstm_count}/{cnn_lstm_total}) {model_name}"
             )

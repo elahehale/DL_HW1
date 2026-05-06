@@ -12,7 +12,8 @@ class LaserCNNLSTM(LaserBaseModule):
         output_size=1,
         num_filters=64,
         kernel_size=3,
-        dropout=0.1,
+        cnn_dropout=0,
+        lstm_dropout=0.1,
         fc_dropout=0.1,
         layer_norm=False,
     ):
@@ -30,11 +31,11 @@ class LaserCNNLSTM(LaserBaseModule):
             nn.Conv1d(input_channels, num_filters, kernel_size),
             nn.BatchNorm1d(num_filters),
             nn.ReLU(),
-            nn.Dropout1d(dropout),
+            nn.Dropout1d(cnn_dropout),
             nn.Conv1d(num_filters, num_filters * 2, kernel_size),
             nn.BatchNorm1d(num_filters * 2),
             nn.ReLU(),
-            nn.Dropout1d(dropout),
+            nn.Dropout1d(cnn_dropout),
         )
 
         self.lstm = nn.LSTM(
@@ -42,7 +43,7 @@ class LaserCNNLSTM(LaserBaseModule):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout if num_layers > 1 else 0.0,
+            dropout=lstm_dropout if num_layers > 1 else 0.0,
         )
         self.layer_norm = nn.LayerNorm(hidden_size) if layer_norm else None
         self.dropout = nn.Dropout(fc_dropout)
