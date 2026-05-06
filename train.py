@@ -69,6 +69,8 @@ def train_model(
         if scheduler is not None:
             scheduler.step(val_loss)
 
+    print()
+
     if save_model:
         X_train, _ = train_loader.dataset.tensors
         seq_len = X_train.shape[1]
@@ -83,5 +85,4 @@ def train_model(
         torch.save(model.state_dict(), save_path)
         print(f"{version} model saved.")
 
-    clear_current_line()
     return model

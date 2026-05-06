@@ -1,4 +1,5 @@
 import torch
+import time
 from torch import nn
 from dataset import LaserData
 from models.cnn_lstm_model import LaserCNNLSTM
@@ -10,7 +11,7 @@ from train import train_model
 from evaluate import evaluate_model
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from util import save_model
+from util import *
 
 ############################ Hyperparameter options ###########################
 
@@ -51,10 +52,10 @@ print(f"{optimizers=}")
 learning_rates = [1e-3]
 print(f"{learning_rates=}")
 
-weight_decays = [0, 1e-5, 1e-4]
+weight_decays = [1e-5, 1e-4]
 print(f"{weight_decays=}")
 
-scheduler_factors = [0.5, 0.75, 1]  # 1 is equivalent to no scheduler
+scheduler_factors = [0.5, 0.75]  # 1 is equivalent to no scheduler
 print(f"{scheduler_factors=}")
 
 scheduler_patiences = [5]
@@ -101,6 +102,11 @@ cnn_lstm_total = (
 total_runs = cnn_total + lstm_total + gru_total + cnn_lstm_total
 print(f"Total model trainings: {total_runs}")
 
+
+def total_count():
+    return cnn_count + lstm_count + gru_count + cnn_lstm_count
+
+
 best_cnn_mse = float("inf")
 best_cnn_model = None
 best_cnn_model_name = ""
@@ -116,6 +122,23 @@ best_gru_model_name = ""
 best_cnn_lstm_mse = float("inf")
 best_cnn_lstm_model = None
 best_cnn_lstm_model_name = ""
+
+start_time = time.time()
+
+
+def print_progress():
+    elapsed_seconds = time.time() - start_time
+    remaining_seconds = estimate_remaining_time(
+        elapsed_seconds, total_count(), total_runs
+    )
+
+    print(
+        f"Best CNN MSE: {best_cnn_mse:.4f} | Best LSTM MSE: {best_lstm_mse:.4f} | Best GRU MSE: {best_gru_mse:.4f} | Best CNN-LSTM MSE: {best_cnn_lstm_mse:.4f}"
+    )
+    print(
+        f"Progress: {total_count()}/{total_runs} | Elapsed: {format_seconds(elapsed_seconds)} | Remaining: {format_seconds(remaining_seconds)}"
+    )
+
 
 for seq_len in sequence_lengths:
     dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len)
@@ -154,7 +177,9 @@ for seq_len in sequence_lengths:
             ).to(device)
             cnn_count += 1
             model_name = f"CNN_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_kern{kernel_size}_filt{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
-            print(f"Training CNN model ({cnn_count}/{cnn_total}) {model_name}")
+            print(
+                f"{'='*100}\nTraining CNN model ({cnn_count}/{cnn_total}) {model_name}"
+            )
 
             optimizer = optimizer_cls(
                 model.parameters(), lr=learning_rate, weight_decay=weight_decay
@@ -184,7 +209,8 @@ for seq_len in sequence_lengths:
             )
 
             mae, mse = evaluate_model(model, val_loader, device, dataset)
-            print(f"MAE: {mae:.4f}, MSE: {mse:.4f}")
+            print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+            print_progress()
 
             if mse < best_cnn_mse:
                 best_cnn_mse = mse
@@ -206,7 +232,9 @@ for seq_len in sequence_lengths:
             ).to(device)
             lstm_count += 1
             model_name = f"LSTM_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}_schedp{scheduler_patience}"
-            print(f"Training LSTM model ({lstm_count}/{lstm_total}) {model_name}")
+            print(
+                f"{'='*100}\nTraining LSTM model ({lstm_count}/{lstm_total}) {model_name}"
+            )
 
             optimizer = optimizer_cls(
                 model.parameters(), lr=learning_rate, weight_decay=weight_decay
@@ -236,7 +264,8 @@ for seq_len in sequence_lengths:
             )
 
             mae, mse = evaluate_model(model, val_loader, device, dataset)
-            print(f"MAE: {mae:.4f}, MSE: {mse:.4f}")
+            print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+            print_progress()
 
             if mse < best_lstm_mse:
                 best_lstm_mse = mse
@@ -258,7 +287,9 @@ for seq_len in sequence_lengths:
             ).to(device)
             gru_count += 1
             model_name = f"GRU_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_schedf{scheduler_factor}_schedp{scheduler_patience}"
-            print(f"Training GRU model ({gru_count}/{gru_total}) {model_name}")
+            print(
+                f"{'='*100}\nTraining GRU model ({gru_count}/{gru_total}) {model_name}"
+            )
 
             optimizer = optimizer_cls(
                 model.parameters(), lr=learning_rate, weight_decay=weight_decay
@@ -288,7 +319,8 @@ for seq_len in sequence_lengths:
             )
 
             mae, mse = evaluate_model(model, val_loader, device, dataset)
-            print(f"MAE: {mae:.4f}, MSE: {mse:.4f}")
+            print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+            print_progress()
 
             if mse < best_gru_mse:
                 best_gru_mse = mse
@@ -314,7 +346,7 @@ for seq_len in sequence_lengths:
             cnn_lstm_count += 1
             model_name = f"CNNLSTM_seq{seq_len}_drop{dropout}_fcdrop{fc_dropout}_ln{layer_norm}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_hid{hidden_size}_layers{num_layer}_kernel{kernel_size}_filters{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
             print(
-                f"Training CNNLSTM model ({cnn_lstm_count}/{cnn_lstm_total}) {model_name}"
+                f"{'='*100}\nTraining CNNLSTM model ({cnn_lstm_count}/{cnn_lstm_total}) {model_name}"
             )
 
             optimizer = optimizer_cls(
@@ -345,7 +377,8 @@ for seq_len in sequence_lengths:
             )
 
             mae, mse = evaluate_model(model, val_loader, device, dataset)
-            print(f"MAE: {mae:.4f}, MSE: {mse:.4f}")
+            print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+            print_progress()
 
             if mse < best_cnn_lstm_mse:
                 best_cnn_lstm_mse = mse
