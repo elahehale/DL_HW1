@@ -17,7 +17,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 ############################ Hyperparameter options ###########################
 
 # ======================= common model hyperparameters =========================
-sequence_lengths = [25, 30, 35, 40, 45, 50]
+sequence_lengths = [25, 30, 40, 45, 50]
 print(f"{sequence_lengths=}")
 
 fc_dropouts = [0, 0.1]
@@ -30,7 +30,7 @@ print(f"{hidden_sizes=}")
 num_layers = [2, 3, 4]
 print(f"{num_layers=}")
 
-layernorm_options = [True, False]
+layernorm_options = [False]
 print(f"{layernorm_options=}")
 
 lstm_dropouts = [0, 0.1]
