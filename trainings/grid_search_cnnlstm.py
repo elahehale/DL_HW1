@@ -24,13 +24,13 @@ fc_dropouts = [0, 0.1]
 print(f"{fc_dropouts=}")
 
 ##========================= gru & lstm hyperparameters ========================
-hidden_sizes = [16, 32, 64]
+hidden_sizes = [16, 32]
 print(f"{hidden_sizes=}")
 
-num_layers = [2, 3, 4]
+num_layers = [2, 3]
 print(f"{num_layers=}")
 
-layernorm_options = [ False]
+layernorm_options = [False, True]
 print(f"{layernorm_options=}")
 
 lstm_dropouts = [0, 0.1]
@@ -40,32 +40,32 @@ print(f"{lstm_dropouts=}")
 kernel_sizes = [3, 5]
 print(f"{kernel_sizes=}")
 
-num_filters = [16, 32, 64]
+num_filters = [16, 32]
 print(f"{num_filters=}")
 
 cnn_dropouts = [0, 0.1]
 print(f"{cnn_dropouts=}")
 
 # ========================= training hyperparameters ===========================
-epochs = [30]
+epochs = [100]
 print(f"{epochs=}")
 
 optimizers = [AdamW, RMSprop]
 print(f"{optimizers=}")
 
-learning_rates = [1e-3, 5*1e-4]
+learning_rates = [1e-3]
 print(f"{learning_rates=}")
 
-weight_decays = [1e-5, 1e-4]
+weight_decays = [1e-4]
 print(f"{weight_decays=}")
 
-scheduler_factors = [0.5, 0.75, 1]  # 1 is equivalent to no scheduler
+scheduler_factors = [0.75]  # 1 is equivalent to no scheduler
 print(f"{scheduler_factors=}")
 
 scheduler_patiences = [5]
 print(f"{scheduler_patiences=}")
 
-scalers =[ StandardScaler, MinMaxScaler]
+scalers =[StandardScaler, MinMaxScaler]
 print(f"{scalers=}")
 ################################ grid search ##################################
 
