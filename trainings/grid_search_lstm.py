@@ -20,20 +20,20 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 sequence_lengths = [25, 30, 35, 40, 45, 50]
 print(f"{sequence_lengths=}")
 
-fc_dropouts = [0, 0.1, 0.2]
+fc_dropouts = [0, 0.1]
 print(f"{fc_dropouts=}")
 
 ##========================= gru & lstm hyperparameters ========================
 hidden_sizes = [16, 32, 64]
 print(f"{hidden_sizes=}")
 
-num_layers = [2, 3, 4, 5]
+num_layers = [2, 3, 4]
 print(f"{num_layers=}")
 
 layernorm_options = [True, False]
 print(f"{layernorm_options=}")
 
-lstm_dropouts = [0, 0.1, 0.2]
+lstm_dropouts = [0, 0.1]
 print(f"{lstm_dropouts=}")
 
 # ============================ CNN hyperparameters =============================
@@ -44,13 +44,13 @@ num_filters = [16, 32, 64]
 print(f"{num_filters=}")
 
 # ========================= training hyperparameters ===========================
-epochs = [60]
+epochs = [30]
 print(f"{epochs=}")
 
 optimizers = [AdamW, RMSprop]
 print(f"{optimizers=}")
 
-learning_rates = [1e-3]
+learning_rates = [1e-3, 5*1e-4]
 print(f"{learning_rates=}")
 
 weight_decays = [1e-5, 1e-4]
@@ -195,12 +195,14 @@ for seq_len in sequence_lengths:
 
                 mae, mse = evaluate_model(model, val_loader, device, dataset)
                 print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-                print_progress()
+
 
                 if mse < best_lstm_mse:
                     best_lstm_mse = mse
                     best_lstm_model = model
                     best_lstm_model_name = model_name
+
+                print_progress()
 
 
 print(f"Best LSTM model: {best_lstm_model_name}, MSE: {best_lstm_mse:.4f}")
