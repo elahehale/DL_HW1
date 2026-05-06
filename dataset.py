@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.io
 import torch
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.utils.data import TensorDataset, DataLoader
 
 
@@ -22,7 +22,7 @@ class LaserData:
         if scaler is not None:
             self.scaler = scaler
         else:
-            self.scaler = MinMaxScaler()
+            self.scaler = StandardScaler()
 
         self.train_raw = None
         self.val_raw = None

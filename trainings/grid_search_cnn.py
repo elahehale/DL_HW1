@@ -12,6 +12,7 @@ from evaluate import evaluate_model
 from torch.optim import AdamW, SGD, RMSprop
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from util import *
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 ############################ Hyperparameter options ###########################
 
@@ -51,6 +52,8 @@ print(f"{scheduler_factors=}")
 scheduler_patiences = [5]
 print(f"{scheduler_patiences=}")
 
+scalers =[MinMaxScaler, StandardScaler]
+print(f"{scalers=}")
 ################################ grid search ##################################
 
 
@@ -67,6 +70,8 @@ common_total = (
     * len(weight_decays)
     * len(scheduler_factors)
     * len(scheduler_patiences)
+    * len(scalers)
+
 )
 
 cnn_count = 0
@@ -102,81 +107,82 @@ def print_progress():
 
 
 for seq_len in sequence_lengths:
-    dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len)
-    train_loader, val_loader = dataset.get_loaders(batch_size=batch_size)
+    for scaler in scalers:
+        dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len, scaler=scaler())
+        train_loader, val_loader = dataset.get_loaders(batch_size=batch_size)
 
-    # common hyperparameters
-    for (
-        fc_dropout,
-        epoch_count,
-        optimizer_cls,
-        learning_rate,
-        weight_decay,
-        scheduler_factor,
-        scheduler_patience,
-    ) in product(
-        fc_dropouts,
-        epochs,
-        optimizers,
-        learning_rates,
-        weight_decays,
-        scheduler_factors,
-        scheduler_patiences,
-    ):
-        optimizer_name = optimizer_cls.__name__
-
-        # CNN hyperparameters
-        for cnn_dropout, kernel_size, num_filter in product(
-            cnn_dropouts, kernel_sizes, num_filters
+        # common hyperparameters
+        for (
+            fc_dropout,
+            epoch_count,
+            optimizer_cls,
+            learning_rate,
+            weight_decay,
+            scheduler_factor,
+            scheduler_patience,
+        ) in product(
+            fc_dropouts,
+            epochs,
+            optimizers,
+            learning_rates,
+            weight_decays,
+            scheduler_factors,
+            scheduler_patiences,
         ):
-            model = LaserCNN(
-                seq_length=seq_len,
-                num_filters=num_filter,
-                kernel_size=kernel_size,
-                dropout=cnn_dropout,
-                fc_dropout=fc_dropout,
-            ).to(device)
-            cnn_count += 1
-            model_name = f"CNN_seq{seq_len}_cnndrop{cnn_dropout}_fcdrop{fc_dropout}_ep{epoch_count}_opt{optimizer_name}_lr{learning_rate}_wd{weight_decay}_kern{kernel_size}_filt{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
-            print(
-                f"{'='*100}\nTraining CNN model ({cnn_count}/{cnn_total}) {model_name}"
-            )
+            optimizer_name = optimizer_cls.__name__
 
-            optimizer = optimizer_cls(
-                model.parameters(), lr=learning_rate, weight_decay=weight_decay
-            )
-            scheduler = (
-                ReduceLROnPlateau(
-                    optimizer,
-                    mode="min",
-                    factor=scheduler_factor,
-                    patience=scheduler_patience,
+            # CNN hyperparameters
+            for cnn_dropout, kernel_size, num_filter in product(
+                cnn_dropouts, kernel_sizes, num_filters
+            ):
+                model = LaserCNN(
+                    seq_length=seq_len,
+                    num_filters=num_filter,
+                    kernel_size=kernel_size,
+                    dropout=cnn_dropout,
+                    fc_dropout=fc_dropout,
+                ).to(device)
+                cnn_count += 1
+                model_name = f"CNN_seq{seq_len}_cnndrop{cnn_dropout}_fcdrop{fc_dropout}_ep{epoch_count}_opt{optimizer_name}_scale{scaler.__name__}_lr{learning_rate}_wd{weight_decay}_kern{kernel_size}_filt{num_filter}_schedf{scheduler_factor}_schedp{scheduler_patience}"
+                print(
+                    f"{'='*100}\nTraining CNN model ({cnn_count}/{cnn_total}) {model_name}"
                 )
-                if scheduler_factor < 1
-                else None
-            )
 
-            model = train_model(
-                epoch_count,
-                model,
-                optimizer,
-                criterion,
-                train_loader,
-                val_loader,
-                device,
-                scheduler=scheduler,
-                clip_grad_norm=None,
-                save_model=False,
-            )
+                optimizer = optimizer_cls(
+                    model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                )
+                scheduler = (
+                    ReduceLROnPlateau(
+                        optimizer,
+                        mode="min",
+                        factor=scheduler_factor,
+                        patience=scheduler_patience,
+                    )
+                    if scheduler_factor < 1
+                    else None
+                )
 
-            mae, mse = evaluate_model(model, val_loader, device, dataset)
-            print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-            print_progress()
+                model = train_model(
+                    epoch_count,
+                    model,
+                    optimizer,
+                    criterion,
+                    train_loader,
+                    val_loader,
+                    device,
+                    scheduler=scheduler,
+                    clip_grad_norm=None,
+                    save_model=False,
+                )
 
-            if mse < best_cnn_mse:
-                best_cnn_mse = mse
-                best_cnn_model = model
-                best_cnn_model_name = model_name
+                mae, mse = evaluate_model(model, val_loader, device, dataset)
+                print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+                print_progress()
+
+                if mse < best_cnn_mse:
+                    best_cnn_mse = mse
+                    best_cnn_model = model
+                    best_cnn_model_name = model_name
 
 print(f"Best CNN model: {best_cnn_model_name}, MSE: {best_cnn_mse:.4f}")
 best_cnn_model_name += f"_mse{best_cnn_mse:.4f}"
