@@ -31,7 +31,7 @@ print(f"{hidden_sizes=}")
 num_layers = [2, 3, 4]
 print(f"{num_layers=}")
 
-layernorm_options = [True]
+layernorm_options = [True, False]
 print(f"{layernorm_options=}")
 
 # ============================ CNN hyperparameters =============================
@@ -54,7 +54,7 @@ print(f"{learning_rates=}")
 weight_decays = [0, 1e-5, 1e-4]
 print(f"{weight_decays=}")
 
-scheduler_factors = [0.5, 1]  # 1 is equivalent to no scheduler
+scheduler_factors = [0.5, 0.75, 1]  # 1 is equivalent to no scheduler
 print(f"{scheduler_factors=}")
 
 scheduler_patiences = [5]
@@ -65,7 +65,7 @@ print(f"{scheduler_patiences=}")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
-batch_size = 512
+batch_size = 32
 
 common_total = (
     len(sequence_lengths)
@@ -98,7 +98,8 @@ cnn_lstm_total = (
     * len(num_filters)
 )
 
-print(f"Total model trainings: {cnn_total + lstm_total + gru_total + cnn_lstm_total}")
+total_runs = cnn_total + lstm_total + gru_total + cnn_lstm_total
+print(f"Total model trainings: {total_runs}")
 
 best_cnn_mse = float("inf")
 best_cnn_model = None
