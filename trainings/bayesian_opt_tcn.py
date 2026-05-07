@@ -16,10 +16,9 @@ from dataset import LaserData
 from models.tcn_model import LaserTCN
 from train import train_model
 
-# ---- BO / training budget (crank up for real runs) ----
 BO_CALLS = 28
 BO_SEED = 0
-EPOCHS_PER_TRIAL = 22  # short runs for search; bump for final retrain
+EPOCHS_PER_TRIAL = 22 
 DATA_PATH = "data/Xtrain.mat"
 SPLIT = 0.8
 BATCH = 32
@@ -75,28 +74,21 @@ def vec_to_cfg(u):
 
 def run_trial(u):
     cfg = vec_to_cfg(u)
-    try:
-        ds = LaserData(
-            DATA_PATH,
-            split_ratio=SPLIT,
-            sequence_length=cfg["seq"],
-            key="Xtrain",
-        )
-        tr, va = ds.get_loaders(batch_size=BATCH)
-    except Exception:
-        return 1e6
-
-    try:
-        model = LaserTCN(
-            input_channels=1,
-            hidden_channels=cfg["hidden"],
-            kernel_size=cfg["k"],
-            num_levels=cfg["levels"],
-            dropout=cfg["drop"],
-            output_size=1,
-        ).to(device)
-    except Exception:
-        return 1e6
+    ds = LaserData(
+        DATA_PATH,
+        split_ratio=SPLIT,
+        sequence_length=cfg["seq"],
+        key="Xtrain",
+    )
+    tr, va = ds.get_loaders(batch_size=BATCH)
+    model = LaserTCN(
+        input_channels=1,
+        hidden_channels=cfg["hidden"],
+        kernel_size=cfg["k"],
+        num_levels=cfg["levels"],
+        dropout=cfg["drop"],
+        output_size=1,
+    ).to(device)
 
     opt = torch.optim.Adam(
         model.parameters(), lr=cfg["lr"], weight_decay=cfg["wd"]

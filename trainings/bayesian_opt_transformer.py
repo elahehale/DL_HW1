@@ -79,28 +79,21 @@ def vec_to_cfg(u):
 
 def run_trial(u):
     cfg = vec_to_cfg(u)
-    try:
-        ds = LaserData(
-            DATA_PATH,
-            split_ratio=SPLIT,
-            sequence_length=cfg["seq"],
-            key="Xtrain",
-        )
-        tr, va = ds.get_loaders(batch_size=BATCH)
-    except Exception:
-        return 1e6
-
-    try:
-        model = LaserTimeSeriesTransformer(
-            d_model=cfg["d_model"],
-            nhead=cfg["nhead"],
-            num_encoder_layers=cfg["layers"],
-            dim_feedforward=cfg["ff"],
-            dropout=cfg["drop"],
-            output_size=1,
-        ).to(device)
-    except Exception:
-        return 1e6
+    ds = LaserData(
+        DATA_PATH,
+        split_ratio=SPLIT,
+        sequence_length=cfg["seq"],
+        key="Xtrain",
+    )
+    tr, va = ds.get_loaders(batch_size=BATCH)
+    model = LaserTimeSeriesTransformer(
+        d_model=cfg["d_model"],
+        nhead=cfg["nhead"],
+        num_encoder_layers=cfg["layers"],
+        dim_feedforward=cfg["ff"],
+        dropout=cfg["drop"],
+        output_size=1,
+    ).to(device)
 
     opt = torch.optim.Adam(
         model.parameters(), lr=cfg["lr"], weight_decay=cfg["wd"]
