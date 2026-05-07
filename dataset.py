@@ -3,7 +3,28 @@ import scipy.io
 import torch
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.utils.data import TensorDataset, DataLoader
+import matplotlib.pyplot as plt
 
+
+def plot_laser_data(dataset):
+    # ploting the raw laser measurements, coloring the training portion red and the validation portion blue
+
+    data = dataset.raw_data.flatten()
+    split_idx = int(dataset.split_ratio * len(data))
+    indices = range(len(data))
+    plt.figure(figsize=(15, 6))
+
+    plt.plot(indices[:split_idx], data[:split_idx], color='red', label='Training Data')
+    plt.plot(indices[split_idx:], data[split_idx:], color='blue', label='Validation Data')
+
+    plt.title('Laser Measurement Raw Data')
+    plt.xlabel('Time Step')
+    plt.ylabel('Measurement Value')
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.6)
+
+    # Save the figure
+    plt.savefig('out/laser_data_split_visualization.png')
 
 class LaserData:
     def __init__(self, path="data/Xtrain.mat", split_ratio = 0.8, sequence_length = 20, scaler = None, mode="train", key = "Xtrain"):
@@ -106,7 +127,7 @@ if __name__ == "__main__":
     dataset = LaserData("data/Xtrain.mat")
     train_loader, val_loader = dataset.get_loaders()
     X_train, y_train = train_loader.dataset.tensors
-
+    plot_laser_data(dataset)
     print(X_train.shape)
     print(y_train.shape)
     # ouput:
