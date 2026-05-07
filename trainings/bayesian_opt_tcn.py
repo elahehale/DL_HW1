@@ -9,6 +9,7 @@ sys.path.insert(0, str(_train))
 import numpy as np
 import torch
 from torch import nn
+from sklearn.metrics import mean_squared_error
 
 from bo_gp import gp_ei_search, to_int
 from dataset import LaserData
@@ -28,14 +29,27 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
 
 
-def val_mse(model, val_loader):
+def val_mse(model, val_loader, dataset):
     model.eval()
-    s = 0.0
+    preds_scaled = []
+    trues_scaled = []
     with torch.no_grad():
         for xb, yb in val_loader:
-            xb, yb = xb.to(device), yb.to(device)
-            s += criterion(model(xb), yb).item()
-    return s / max(len(val_loader), 1)
+            xb = xb.to(device)
+            pred_scaled = model(xb).cpu().numpy()
+            true_scaled = yb.numpy()
+            preds_scaled.append(pred_scaled)
+            trues_scaled.append(true_scaled)
+
+    if not preds_scaled:
+        return float("inf")
+
+    preds_scaled = np.vstack(preds_scaled)
+    trues_scaled = np.vstack(trues_scaled)
+    scaler = dataset.get_scaler()
+    preds_original = scaler.inverse_transform(preds_scaled)
+    trues_original = scaler.inverse_transform(trues_scaled)
+    return mean_squared_error(trues_original, preds_original)
 
 
 def vec_to_cfg(u):
@@ -98,7 +112,7 @@ def run_trial(u):
         clip_grad_norm=CLIP,
         save_model=False,
     )
-    loss = val_mse(model, va)
+    loss = val_mse(model, va, ds)
     print(
         f" trial val_mse={loss:.5f} | seq={cfg['seq']} hidden={cfg['hidden']} "
         f"k={cfg['k']} L={cfg['levels']} drop={cfg['drop']:.2f} lr={cfg['lr']:.2e}"
@@ -148,4 +162,4 @@ if __name__ == "__main__":
         version="_bo_best",
         save_model=True,
     )
-    print("final val mse:", val_mse(model, va))
+    print("final val mse:", val_mse(model, va, ds))
