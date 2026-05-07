@@ -17,7 +17,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 ############################ Hyperparameter options ###########################
 
 # ======================= common model hyperparameters =========================
-sequence_lengths = [25, 30, 35, 40, 45, 50]
+sequence_lengths = [25, 30, 40, 45, 50]
 print(f"{sequence_lengths=}")
 
 fc_dropouts = [0, 0.1]
@@ -30,7 +30,7 @@ print(f"{hidden_sizes=}")
 num_layers = [2, 3, 4]
 print(f"{num_layers=}")
 
-layernorm_options = [True, False]
+layernorm_options = [ False]
 print(f"{layernorm_options=}")
 
 lstm_dropouts = [0, 0.1]
@@ -50,7 +50,11 @@ print(f"{epochs=}")
 optimizers = [AdamW, RMSprop]
 print(f"{optimizers=}")
 
+<<<<<<< HEAD
 learning_rates = [1e-3, 5e-4]
+=======
+learning_rates = [1e-3, 5*1e-4]
+>>>>>>> 6c2c93a1767b01378827e31ad78eafdae9608dec
 print(f"{learning_rates=}")
 
 weight_decays = [1e-5, 1e-4]
@@ -194,12 +198,13 @@ for seq_len in sequence_lengths:
 
                 mae, mse = evaluate_model(model, val_loader, device, dataset)
                 print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-                print_progress()
 
                 if mse < best_gru_mse:
                     best_gru_mse = mse
                     best_gru_model = model
                     best_gru_model_name = model_name
+                    
+                print_progress()
 
 print(f"Best GRU model: {best_gru_model_name}, MSE: {best_gru_mse:.4f}")
 best_gru_model_name += f"_mse{best_gru_mse:.4f}"
