@@ -50,11 +50,7 @@ print(f"{epochs=}")
 optimizers = [AdamW, RMSprop]
 print(f"{optimizers=}")
 
-<<<<<<< HEAD
 learning_rates = [1e-3, 5e-4]
-=======
-learning_rates = [1e-3, 5*1e-4]
->>>>>>> 6c2c93a1767b01378827e31ad78eafdae9608dec
 print(f"{learning_rates=}")
 
 weight_decays = [1e-5, 1e-4]
