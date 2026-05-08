@@ -187,181 +187,181 @@ if __name__ == "__main__":
     LSTM_model_path = "out/models/LSTM_seq30_lstmdrop0.1_fcdrop0_lnFalse_ep30_optRMSprop_scaleStandardScaler_lr0.0005_wd1e-05_hid64_layers4_schedf0.5_schedp5_mse1.5272.pth"
     GRU_model_path = "out/models/GRU_seq50_lstmdrop0_fcdrop0_lnFalse_ep30_optAdamW_scaleStandardScaler_lr0.001_wd1e-05_hid32_layers2_schedf0.75_schedp5_mse1.7539.pth"
     CNN_model_path = "out/models/CNN_seq45_cnndrop0.1_fcdrop0_ep30_optAdamW_scaleStandardScaler_lr0.001_wd0.0001_kern5_filt64_schedf0.5_schedp5_mse2.4517.pth"
+    flags = [1,1,1,1]
+    if flags[0] == 1:
+        # ===================================================CNNLSTM==================================
+        data = models["CNNLSTM"]
+        test_loader_80, test_loader_90, test_loader_100,train_loader_80, train_loader_90, train_loader_100,val_loader_80, val_loader_90, dataset_80, dataset_90, dataset_100 = get_data_loaders(data["seq"])
+        model = initialize_cnnlstm_model(data, device)
+        criterion = nn.MSELoss()
 
-    # ===================================================CNNLSTM==================================
-    data = models["CNNLSTM"]
-    test_loader_80, test_loader_90, test_loader_100,train_loader_80, train_loader_90, train_loader_100,val_loader_80, val_loader_90, dataset_80, dataset_90, dataset_100 = get_data_loaders(data["seq"])
-    model = initialize_cnnlstm_model(data, device)
-    criterion = nn.MSELoss()
+        print("=================CNNLSTM=================")
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        epochs = data["ep"]
 
-    print("=================CNNLSTM=================")
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    epochs = data["ep"]
+        # train on whole data
+        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
+        print("LSTMCNN results for the best hyperparams trained on 100% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
 
-    # train on whole data
-    train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
-    print("LSTMCNN results for the best hyperparams trained on 100% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+        # train on 90 percet
+        model = initialize_cnnlstm_model(data, device)
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
+        print("LSTMCNN results for the best hyperparams trained on 90% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
 
-    # train on 90 percet
-    model = initialize_cnnlstm_model(data, device)
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
-    print("LSTMCNN results for the best hyperparams trained on 90% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+        # train on 80 percent
+        model = initialize_cnnlstm_model(data, device)
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
+        print("LSTMCNN results for the best hyperparams trained on 80% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
 
-    # train on 80 percent
-    model = initialize_cnnlstm_model(data, device)
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
-    print("LSTMCNN results for the best hyperparams trained on 80% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-
-    # evaluate previously trained model
-    model = initialize_cnnlstm_model(data, device)
-    state_dict = torch.load(CNNLSTM_model_path, map_location="cpu")
-    model.load_state_dict(state_dict)
-    mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
-    print("LSTMCNN results for the best hyperparams saved model")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-
-
-
-
-
-    # ==================================CNN=====================================
-
-    data = models["CNN"]
-    test_loader_80, test_loader_90, test_loader_100,train_loader_80, train_loader_90, train_loader_100,val_loader_80, val_loader_90, dataset_80, dataset_90, dataset_100 = get_data_loaders(data["seq"])
-    model = initialize_cnn_model(data, device)
-
-    print("=================CNN=================")
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    criterion = nn.MSELoss()
-
-    # train on whole data
-    epochs = data["ep"]
-    train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
-    print("CNN results for the best hyperparams trained on 100% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-
-    # train on 90 percet
-    model = initialize_cnn_model(data, device)
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
-    print("CNN results for the best hyperparams trained on 90% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-
-    # train on 80 percet
-    model = initialize_cnn_model(data, device)
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
-    print("CNN results for the best hyperparams trained on 80% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-
-
-    # evaluate previously trained model
-    model = initialize_cnn_model(data, device)
-    state_dict = torch.load(CNN_model_path, map_location="cpu")
-    model.load_state_dict(state_dict)
-    mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
-    print("CNN results for the best hyperparams saved model")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-
-    # ==============================================GRU====================================
-
-    data = models["GRU"]
-    test_loader_80, test_loader_90, test_loader_100,train_loader_80, train_loader_90, train_loader_100,val_loader_80, val_loader_90, dataset_80, dataset_90, dataset_100 = get_data_loaders(data["seq"])
-    model = initialize_gru_model(data, device)
-
-    print("=================GRU=================")
-
-
-    # train on whole data
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    epochs = data["ep"]
-    criterion = nn.MSELoss()
-    train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
-    print("GRU results for the best hyperparams trained on 100% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-
-
-    # train on 90 percet
-    model = initialize_gru_model(data, device)
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
-    print("GRU results for the best hyperparams trained on 90% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-
-
-    # train on 80 percet
-    model = initialize_gru_model(data, device)
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
-    print("GRU results for the best hyperparams trained on 80% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
-
-
-    # evaluate previously trained model
-    model = initialize_gru_model(data, device)
-    state_dict = torch.load(GRU_model_path, map_location="cpu")
-    model.load_state_dict(state_dict)
-    mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
-    print("GRU results for the best hyperparams saved model")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+        # evaluate previously trained model
+        model = initialize_cnnlstm_model(data, device)
+        state_dict = torch.load(CNNLSTM_model_path, map_location="cpu")
+        model.load_state_dict(state_dict)
+        mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
+        print("LSTMCNN results for the best hyperparams saved model")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
 
 
 
 
-    # =============LSTM=============
-    data = models["LSTM"]
-    test_loader_80, test_loader_90, test_loader_100,train_loader_80, train_loader_90, train_loader_100,val_loader_80, val_loader_90, dataset_80, dataset_90, dataset_100 = get_data_loaders(data["seq"])
-    model = initialize_lstm_model(data, device)
+    if flags[1]==1:
+        # ==================================CNN=====================================
 
-    print("=================LSTM=================")
+        data = models["CNN"]
+        test_loader_80, test_loader_90, test_loader_100,train_loader_80, train_loader_90, train_loader_100,val_loader_80, val_loader_90, dataset_80, dataset_90, dataset_100 = get_data_loaders(data["seq"])
+        model = initialize_cnn_model(data, device)
 
-    # train on whole data
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    epochs = data["ep"]
-    criterion = nn.MSELoss()
-    train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
-    print("LSTM results for the best hyperparams trained on 100% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+        print("=================CNN=================")
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        criterion = nn.MSELoss()
 
-    # train on 90 percet
-    model = initialize_lstm_model(data, device)
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
-    print("LSTM results for the best hyperparams trained on 90% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+        # train on whole data
+        epochs = data["ep"]
+        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
+        print("CNN results for the best hyperparams trained on 100% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
 
-    # train on 80 percet
-    model = initialize_lstm_model(data, device)
-    optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-    train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
-    mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
-    print("LSTM results for the best hyperparams trained on 80% data")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+        # train on 90 percet
+        model = initialize_cnn_model(data, device)
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
+        print("CNN results for the best hyperparams trained on 90% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+
+        # train on 80 percet
+        model = initialize_cnn_model(data, device)
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
+        print("CNN results for the best hyperparams trained on 80% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
 
 
-    # evaluate previously trained model
-    model = initialize_lstm_model(data, device)
-    state_dict = torch.load(LSTM_model_path, map_location="cpu")
-    model.load_state_dict(state_dict)
-    mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
-    print("LSTM results for the best hyperparams saved model")
-    print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+        # evaluate previously trained model
+        model = initialize_cnn_model(data, device)
+        state_dict = torch.load(CNN_model_path, map_location="cpu")
+        model.load_state_dict(state_dict)
+        mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
+        print("CNN results for the best hyperparams saved model")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+
+    if flags[2]==1:
+        # ==============================================GRU====================================
+
+        data = models["GRU"]
+        test_loader_80, test_loader_90, test_loader_100,train_loader_80, train_loader_90, train_loader_100,val_loader_80, val_loader_90, dataset_80, dataset_90, dataset_100 = get_data_loaders(data["seq"])
+        model = initialize_gru_model(data, device)
+
+        print("=================GRU=================")
+
+
+        # train on whole data
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        epochs = data["ep"]
+        criterion = nn.MSELoss()
+        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
+        print("GRU results for the best hyperparams trained on 100% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+
+
+        # train on 90 percet
+        model = initialize_gru_model(data, device)
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
+        print("GRU results for the best hyperparams trained on 90% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+
+
+        # train on 80 percet
+        model = initialize_gru_model(data, device)
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
+        print("GRU results for the best hyperparams trained on 80% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+
+
+        # evaluate previously trained model
+        model = initialize_gru_model(data, device)
+        state_dict = torch.load(GRU_model_path, map_location="cpu")
+        model.load_state_dict(state_dict)
+        mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
+        print("GRU results for the best hyperparams saved model")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+
+    if flags[3]==1:
+        # =============LSTM=============
+        data = models["LSTM"]
+        test_loader_80, test_loader_90, test_loader_100,train_loader_80, train_loader_90, train_loader_100,val_loader_80, val_loader_90, dataset_80, dataset_90, dataset_100 = get_data_loaders(data["seq"])
+        model = initialize_lstm_model(data, device)
+
+        print("=================LSTM=================")
+
+        # train on whole data
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        epochs = data["ep"]
+        criterion = nn.MSELoss()
+        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
+        print("LSTM results for the best hyperparams trained on 100% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+
+        # train on 90 percet
+        model = initialize_lstm_model(data, device)
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
+        print("LSTM results for the best hyperparams trained on 90% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+
+        # train on 80 percet
+        model = initialize_lstm_model(data, device)
+        optimizer, scheduler = initialize_optimizer_scheduler(data, model)
+        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
+        mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
+        print("LSTM results for the best hyperparams trained on 80% data")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
+
+
+        # evaluate previously trained model
+        model = initialize_lstm_model(data, device)
+        state_dict = torch.load(LSTM_model_path, map_location="cpu")
+        model.load_state_dict(state_dict)
+        mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
+        print("LSTM results for the best hyperparams saved model")
+        print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
 
 
 
