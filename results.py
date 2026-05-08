@@ -200,7 +200,9 @@ if __name__ == "__main__":
         epochs = data["ep"]
 
         # train on whole data
-        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
+        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler, clip_grad_norm=1.0,
+                version="",
+                save_model=True)
         mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
         print("LSTMCNN results for the best hyperparams trained on 100% data")
         print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
@@ -208,7 +210,7 @@ if __name__ == "__main__":
         # train on 90 percet
         model = initialize_cnnlstm_model(data, device)
         optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
+        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler, clip_grad_norm=1.0)
         mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
         print("LSTMCNN results for the best hyperparams trained on 90% data")
         print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
@@ -216,7 +218,7 @@ if __name__ == "__main__":
         # train on 80 percent
         model = initialize_cnnlstm_model(data, device)
         optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
+        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler, clip_grad_norm=1.0)
         mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
         print("LSTMCNN results for the best hyperparams trained on 80% data")
         print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
@@ -289,7 +291,7 @@ if __name__ == "__main__":
         optimizer, scheduler = initialize_optimizer_scheduler(data, model)
         epochs = data["ep"]
         criterion = nn.MSELoss()
-        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
+        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler, clip_grad_norm=1.0)
         mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
         print("GRU results for the best hyperparams trained on 100% data")
         print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
@@ -298,7 +300,7 @@ if __name__ == "__main__":
         # train on 90 percet
         model = initialize_gru_model(data, device)
         optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
+        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler, clip_grad_norm=1.0)
         mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
         print("GRU results for the best hyperparams trained on 90% data")
         print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
@@ -307,7 +309,7 @@ if __name__ == "__main__":
         # train on 80 percet
         model = initialize_gru_model(data, device)
         optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
+        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler, clip_grad_norm=1.0)
         mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
         print("GRU results for the best hyperparams trained on 80% data")
         print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
@@ -333,7 +335,7 @@ if __name__ == "__main__":
         optimizer, scheduler = initialize_optimizer_scheduler(data, model)
         epochs = data["ep"]
         criterion = nn.MSELoss()
-        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler)
+        train_model(epochs, model, optimizer, criterion, train_loader_100, None, device, scheduler=scheduler, clip_grad_norm=1.0)
         mae, mse = evaluate_model(model, test_loader_100, device, dataset_100)
         print("LSTM results for the best hyperparams trained on 100% data")
         print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
@@ -341,7 +343,7 @@ if __name__ == "__main__":
         # train on 90 percet
         model = initialize_lstm_model(data, device)
         optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler)
+        train_model(epochs, model, optimizer, criterion, train_loader_90, val_loader_90, device, scheduler=scheduler, clip_grad_norm=1.0)
         mae, mse = evaluate_model(model, test_loader_90, device, dataset_90)
         print("LSTM results for the best hyperparams trained on 90% data")
         print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")
@@ -349,7 +351,7 @@ if __name__ == "__main__":
         # train on 80 percet
         model = initialize_lstm_model(data, device)
         optimizer, scheduler = initialize_optimizer_scheduler(data, model)
-        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler)
+        train_model(epochs, model, optimizer, criterion, train_loader_80, val_loader_80, device, scheduler=scheduler, clip_grad_norm=1.0)
         mae, mse = evaluate_model(model, test_loader_80, device, dataset_80)
         print("LSTM results for the best hyperparams trained on 80% data")
         print(f"Ori MAE: {mae:.4f}, Ori MSE: {mse:.4f}")

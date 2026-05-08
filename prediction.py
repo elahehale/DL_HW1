@@ -4,7 +4,7 @@ from dataset import LaserData
 import numpy as np
 
 
-def predict_next(model, input_sequence, output_size, scaler):
+def predict_next(model, input_sequence, output_size, scaler, device):
     model.eval()
     current_seq = input_sequence.clone().detach().to(device)
     # for lstm, gru, ... we need the input_size (1) dimension
@@ -54,8 +54,16 @@ def plot_predictions(input_sequence, predicted_numbers, scaler):
 
 from models.lstm_model import LaserLSTM
 
+def iterative_predicting_next_points(model, dataset, data_loader, num, device):
+    scaler = dataset.get_scaler()
+    X_val, _ = data_loader.dataset.tensors
+    last_sequence = X_val[-1]
+    print("prediction of next ", num, " is started...")
+    predictions = predict_next(model, last_sequence, num, scaler, device)
+    plot_predictions(last_sequence, predictions, scaler)
+
 if __name__ == "__main__":
-    model_path = "out/models/LaserLSTM_h32_l260epochs_30seq_Adam_lr0.001_.pth"
+    model_path = "out/models/LaserCNNLSTM_h32_l3100epochs_40seq_RMSprop_lr7.508468627929689e-05__.pth"
     print("model ", model_path, " is loading...")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -84,6 +92,6 @@ if __name__ == "__main__":
 
 
     print("prediction of next ", num_of_prediction, " is started...")
-    predictions = predict_next(model, last_sequence, num_of_prediction, scaler)
+    predictions = predict_next(model, last_sequence, num_of_prediction, scaler, device)
     plot_predictions(last_sequence, predictions, scaler)
     # print(predictions_np)
