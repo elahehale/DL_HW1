@@ -23,3 +23,6 @@ class LaserBaseModule(nn.Module, ABC):
             parts.append(f"l{self.num_layers}")
 
         return "_".join(parts)
+
+    def clip_gradients(self):
+        pass

@@ -1,4 +1,5 @@
 import torch.nn as nn
+from torch.nn.utils import clip_grad_norm_
 
 from models.base_model import LaserBaseModule
 
@@ -13,6 +14,7 @@ class LaserGRU(LaserBaseModule):
         dropout=0.2,
         fc_dropout=0.1,
         layer_norm=False,
+        grad_clip_norm=1.0,
     ):
         super().__init__()
         self.input_size = input_size
@@ -21,6 +23,7 @@ class LaserGRU(LaserBaseModule):
         self.output_size = output_size
         self.dropout = dropout
         self.fc_dropout = fc_dropout
+        self.grad_clip_norm = grad_clip_norm
 
         self.gru = nn.GRU(
             input_size=input_size,
@@ -43,3 +46,7 @@ class LaserGRU(LaserBaseModule):
         x = self.fc_dropout_layer(x)
         y = self.fc(x)
         return y
+
+    def clip_gradients(self):
+        if self.grad_clip_norm is not None:
+            clip_grad_norm_(self.gru.parameters(), max_norm=self.grad_clip_norm)

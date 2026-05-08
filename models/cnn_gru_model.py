@@ -3,7 +3,7 @@ from torch.nn.utils import clip_grad_norm_
 from models.base_model import LaserBaseModule
 
 
-class LaserCNNLSTM(LaserBaseModule):
+class LaserCNNGRU(LaserBaseModule):
     def __init__(
         self,
         seq_length=20,
@@ -37,7 +37,7 @@ class LaserCNNLSTM(LaserBaseModule):
             nn.Dropout1d(cnn_dropout),
         )
 
-        self.lstm = nn.LSTM(
+        self.gru = nn.GRU(
             input_size=num_filters * 2,
             hidden_size=hidden_size,
             num_layers=num_layers,
@@ -49,11 +49,12 @@ class LaserCNNLSTM(LaserBaseModule):
         self.fc = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
+        # [batch_size, seq_len, channels] => [batch_size, channels, seq_len]
         x = x.permute(0, 2, 1)
         x = self.conv(x)
         x = x.permute(0, 2, 1)
 
-        out, _ = self.lstm(x)
+        out, _ = self.gru(x)
         out = out[:, -1, :]
         if self.layer_norm:
             out = self.layer_norm(out)
@@ -62,4 +63,4 @@ class LaserCNNLSTM(LaserBaseModule):
 
     def clip_gradients(self):
         if self.grad_clip_norm is not None:
-            clip_grad_norm_(self.lstm.parameters(), max_norm=self.grad_clip_norm)
+            clip_grad_norm_(self.gru.parameters(), max_norm=self.grad_clip_norm)
