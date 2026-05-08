@@ -1,9 +1,10 @@
 import torch
 import os
-from torch.nn.utils import clip_grad_norm_
 from models.base_model import LaserBaseModule
 from util import clear_current_line
 import matplotlib.pyplot as plt
+
+
 def plot_loss(losses, type, model, save_name):
     print("save plots")
     plt.figure(figsize=(10, 5))
@@ -22,6 +23,7 @@ def plot_loss(losses, type, model, save_name):
     plt.savefig(plot_path, bbox_inches="tight")
     plt.close()
 
+
 def train_model(
     epochs,
     model: LaserBaseModule,
@@ -31,9 +33,9 @@ def train_model(
     val_loader,
     device,
     scheduler=None,
-    clip_grad_norm=None,
     version="",
     save_model=False,
+    plot_losses = False
 ):
     train_losses = []
     val_losses = []
@@ -41,6 +43,7 @@ def train_model(
     for epoch in range(epochs):
         model.train()
         train_loss = 0.0
+        val_loss = 0.0
 
         for X_batch, y_batch in train_loader:
             X_batch = X_batch.to(device)
@@ -53,8 +56,7 @@ def train_model(
 
             loss.backward()
 
-            if clip_grad_norm is not None:
-                clip_grad_norm_(model.parameters(), max_norm=clip_grad_norm)
+            model.clip_gradients()
 
             optimizer.step()
 
@@ -65,7 +67,6 @@ def train_model(
 
         if val_loader is not None:
             model.eval()
-            val_loss = 0.0
 
             with torch.no_grad():
                 for X_batch, y_batch in val_loader:
@@ -88,12 +89,10 @@ def train_model(
             )
         else:
             print(
-                f"\rEpoch [{epoch + 1}/{epochs}] "
-                f"Train Loss: {train_loss:.6f}",
+                f"\rEpoch [{epoch + 1}/{epochs}] " f"Train Loss: {train_loss:.6f}",
                 end="",
                 flush=True,
             )
-
 
         if scheduler is not None:
             if val_loader is not None:
@@ -103,18 +102,20 @@ def train_model(
 
     print()
 
-
     X_train, _ = train_loader.dataset.tensors
     seq_len = X_train.shape[1]
     model_name = model.model_name()
     opt_label = (
-                f"{optimizer.__class__.__name__}_lr{optimizer.param_groups[0]['lr']:.5f}_"
-            )
+        f"{optimizer.__class__.__name__}_lr{optimizer.param_groups[0]['lr']:.5f}_"
+    )
+    
     config = f"{epochs}epochs_{seq_len}seq_{opt_label}_"
     save_name = f"{model_name}{config}{version}"
     save_path = f"out/models/{save_name}.pth"
-    plot_loss(train_losses, "Train", model, save_name)
-    plot_loss(val_losses, "Val", model, save_name)
+    
+    if plot_losses:
+        plot_loss(train_losses, "Train", model, save_name)
+        plot_loss(val_losses, "Val", model, save_name)
 
     if save_model:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
