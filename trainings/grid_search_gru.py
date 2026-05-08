@@ -199,7 +199,6 @@ for seq_len in sequence_lengths:
                     best_gru_mse = mse
                     best_gru_model = model
                     best_gru_model_name = model_name
-                    
                 print_progress()
 
 print(f"Best GRU model: {best_gru_model_name}, MSE: {best_gru_mse:.4f}")

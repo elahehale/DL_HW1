@@ -43,31 +43,44 @@ def train_model(
 
         train_loss /= len(train_loader)
 
-        model.eval()
-        val_loss = 0.0
+        if val_loader is not None:
+            model.eval()
+            val_loss = 0.0
 
-        with torch.no_grad():
-            for X_batch, y_batch in val_loader:
-                X_batch = X_batch.to(device)
-                y_batch = y_batch.to(device)
+            with torch.no_grad():
+                for X_batch, y_batch in val_loader:
+                    X_batch = X_batch.to(device)
+                    y_batch = y_batch.to(device)
 
-                y_pred = model(X_batch)
-                loss = criterion(y_pred, y_batch)
+                    y_pred = model(X_batch)
+                    loss = criterion(y_pred, y_batch)
 
-                val_loss += loss.item()
+                    val_loss += loss.item()
 
-        val_loss /= len(val_loader)
+            val_loss /= len(val_loader)
 
-        print(
-            f"\rEpoch [{epoch+1}/{epochs}] "
-            f"Train Loss: {train_loss:.6f} "
-            f"Val Loss: {val_loss:.6f}",
-            end="",
-            flush=True,
-        )
+            print(
+                f"\rEpoch [{epoch+1}/{epochs}] "
+                f"Train Loss: {train_loss:.6f} "
+                f"Val Loss: {val_loss:.6f}",
+                end="",
+                flush=True,
+            )
+        else:
+            print(
+                f"\rEpoch [{epoch + 1}/{epochs}] "
+                f"Train Loss: {train_loss:.6f}",
+                end="",
+                flush=True,
+            )
+
 
         if scheduler is not None:
-            scheduler.step(val_loss)
+            if val_loader is not None:
+                scheduler.step(val_loss)
+            else:
+                scheduler.step(train_loss)
+
 
     print()
 

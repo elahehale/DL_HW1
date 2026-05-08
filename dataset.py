@@ -59,7 +59,9 @@ class LaserData:
         if self.mode == "train":
             self._split_train_val()
             self.train_sequences, self.train_labels = self._create_sequence(self.train_raw)
-            self.val_sequences, self.val_labels = self._create_sequence(self.val_raw)
+            if self.val_raw is not None and len(self.val_raw) > self.sequence_length:
+                self.val_sequences, self.val_labels = self._create_sequence(self.val_raw)
+
         elif self.mode == "test":
             self.test_raw = self.scaler.transform(self.raw_data)
             self.test_sequences, self.test_labels = self._create_sequence(self.test_raw)
@@ -68,13 +70,14 @@ class LaserData:
         split_idx = int(self.split_ratio * len(self.raw_data))
         train = self.raw_data[:split_idx]
         val = self.raw_data[split_idx:]
-
         # fit scaler on training data then apply it to validation
         # because we only know the training data, not the validation (unseen)
         self.scaler.fit(train)
 
         self.train_raw = self.scaler.transform(train)
-        self.val_raw = self.scaler.transform(val)
+        if len(val) > 0:
+            self.val_raw = self.scaler.transform(val)
+
 
     def _create_sequence(self, data):
         X, y = [], []
@@ -90,6 +93,9 @@ class LaserData:
 
     def get_data(self):
         if self.mode == "train":
+            if self.val_sequences is None:
+                return self.train_sequences, self.train_labels
+
             return self.train_sequences, self.train_labels, self.val_sequences, self.val_labels
         else:
             return self.test_sequences, self.test_labels
@@ -97,13 +103,19 @@ class LaserData:
     def get_scaler(self):
         return self.scaler
 
-    def get_loaders(self, batch_size=32):
+    def get_loaders(self, batch_size=32, seed=100):
+        g = torch.Generator()
+        g.manual_seed(seed)
         if self.mode == "train":
             train_loader = DataLoader(
                 TensorDataset(self.train_sequences, self.train_labels),
                 batch_size=batch_size,
-                shuffle=True
+                shuffle=True,
+                generator=g
+
             )
+            if self.val_sequences is None:
+                return train_loader
 
             val_loader = DataLoader(
                 TensorDataset(self.val_sequences, self.val_labels),
@@ -124,12 +136,18 @@ class LaserData:
 
 
 if __name__ == "__main__":
-    dataset = LaserData("data/Xtrain.mat")
+    dataset = LaserData("data/Xtrain.mat",  split_ratio = 0.8, sequence_length = 20, scaler = None, mode="train", key = "Xtrain")
+    scaler = dataset.get_scaler()
+    dataset_test = LaserData("data/Xtest.mat",  split_ratio = 0.8, sequence_length = 20, scaler = scaler, mode="test", key = "Xtest")
+    test_loader = dataset_test.get_loaders()
     train_loader, val_loader = dataset.get_loaders()
     X_train, y_train = train_loader.dataset.tensors
-    plot_laser_data(dataset)
+    # plot_laser_data(dataset)
     print(X_train.shape)
     print(y_train.shape)
+    X_test, y_test = test_loader.dataset.tensors
+    print(X_test.shape, " ", y_test.shape )
+    print(dataset_test.get_scaler())
     # ouput:
     # torch.Size([780, 20, 1])
     # torch.Size([780, 1])
