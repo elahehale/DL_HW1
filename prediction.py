@@ -49,7 +49,9 @@ def plot_predictions(input_sequence, predicted_numbers, scaler):
     plt.xlabel("Time Steps")
     plt.ylabel("Value")
     plt.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig('out/200_prediction.png')
+
 
 
 from models.lstm_model import LaserLSTM

@@ -3,7 +3,24 @@ import os
 from torch.nn.utils import clip_grad_norm_
 from models.base_model import LaserBaseModule
 from util import clear_current_line
+import matplotlib.pyplot as plt
+def plot_loss(losses, type, model, save_name):
+    print("save plots")
+    plt.figure(figsize=(10, 5))
+    plt.plot(losses, label=f"{type} Loss")
 
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title(f"{model.model_name()} Loss Graph")
+
+    plt.legend()
+    plt.grid(True)
+
+    os.makedirs("out/plots", exist_ok=True)
+
+    plot_path = f"out/plots/{save_name}_{type}_Loss.png"
+    plt.savefig(plot_path, bbox_inches="tight")
+    plt.close()
 
 def train_model(
     epochs,
@@ -18,6 +35,8 @@ def train_model(
     version="",
     save_model=False,
 ):
+    train_losses = []
+    val_losses = []
 
     for epoch in range(epochs):
         model.train()
@@ -42,6 +61,7 @@ def train_model(
             train_loss += loss.item()
 
         train_loss /= len(train_loader)
+        train_losses.append(train_loss)
 
         if val_loader is not None:
             model.eval()
@@ -58,7 +78,7 @@ def train_model(
                     val_loss += loss.item()
 
             val_loss /= len(val_loader)
-
+            val_losses.append(val_loss)
             print(
                 f"\rEpoch [{epoch+1}/{epochs}] "
                 f"Train Loss: {train_loss:.6f} "
@@ -81,19 +101,22 @@ def train_model(
             else:
                 scheduler.step(train_loss)
 
-
     print()
 
-    if save_model:
-        X_train, _ = train_loader.dataset.tensors
-        seq_len = X_train.shape[1]
-        model_name = model.model_name()
-        opt_label = (
-            f"{optimizer.__class__.__name__}_lr{optimizer.param_groups[0]['lr']}_"
-        )
-        config = f"{epochs}epochs_{seq_len}seq_{opt_label}_"
-        save_path = f"out/models/{model_name}{config}{version}.pth"
 
+    X_train, _ = train_loader.dataset.tensors
+    seq_len = X_train.shape[1]
+    model_name = model.model_name()
+    opt_label = (
+                f"{optimizer.__class__.__name__}_lr{optimizer.param_groups[0]['lr']:.5f}_"
+            )
+    config = f"{epochs}epochs_{seq_len}seq_{opt_label}_"
+    save_name = f"{model_name}{config}{version}"
+    save_path = f"out/models/{save_name}.pth"
+    plot_loss(train_losses, "Train", model, save_name)
+    plot_loss(val_losses, "Val", model, save_name)
+
+    if save_model:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         torch.save(model.state_dict(), save_path)
         print(f"{version} model saved.")
