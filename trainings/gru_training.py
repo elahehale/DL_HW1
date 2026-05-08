@@ -22,6 +22,15 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 
 epochs = 60
 
-train_model(epochs, model, optimizer, criterion, train_loader, val_loader, device, scheduler=scheduler, clip_grad_norm=1.0)
+train_model(
+    epochs,
+    model,
+    optimizer,
+    criterion,
+    train_loader,
+    val_loader,
+    device,
+    scheduler=scheduler,
+)
 # this should be test loader
 evaluate_model(model, val_loader, device, dataset)

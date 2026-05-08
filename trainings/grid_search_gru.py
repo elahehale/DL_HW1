@@ -17,7 +17,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 ############################ Hyperparameter options ###########################
 
 # ======================= common model hyperparameters =========================
-sequence_lengths = [25, 30, 40, 45, 50]
+sequence_lengths = [45, 50, 55]
 print(f"{sequence_lengths=}")
 
 fc_dropouts = [0, 0.1]
@@ -30,18 +30,11 @@ print(f"{hidden_sizes=}")
 num_layers = [2, 3, 4]
 print(f"{num_layers=}")
 
-layernorm_options = [ False]
+layernorm_options = [False]
 print(f"{layernorm_options=}")
 
 lstm_dropouts = [0, 0.1]
 print(f"{lstm_dropouts=}")
-
-# ============================ CNN hyperparameters =============================
-kernel_sizes = [3, 5]
-print(f"{kernel_sizes=}")
-
-num_filters = [16, 32, 64]
-print(f"{num_filters=}")
 
 # ========================= training hyperparameters ===========================
 epochs = [30]
@@ -50,22 +43,23 @@ print(f"{epochs=}")
 optimizers = [AdamW, RMSprop]
 print(f"{optimizers=}")
 
-learning_rates = [1e-3, 5e-4]
+learning_rates = [1e-3]
 print(f"{learning_rates=}")
 
-weight_decays = [1e-5, 1e-4]
+weight_decays = [1e-5]
 print(f"{weight_decays=}")
 
-scheduler_factors = [0.5, 0.75, 1]  # 1 is equivalent to no scheduler
+scheduler_factors = [0.5, 0.75]  # 1 is equivalent to no scheduler
 print(f"{scheduler_factors=}")
 
 scheduler_patiences = [5]
 print(f"{scheduler_patiences=}")
 
-scalers =[StandardScaler, MinMaxScaler]
+scalers =[StandardScaler]
 print(f"{scalers=}")
 ################################ grid search ##################################
 
+set_seed(100)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
@@ -188,7 +182,6 @@ for seq_len in sequence_lengths:
                     val_loader,
                     device,
                     scheduler=scheduler,
-                    clip_grad_norm=1.0,
                     save_model=False,
                 )
 
