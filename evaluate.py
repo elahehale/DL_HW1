@@ -55,7 +55,7 @@ def evaluate_model(
         # value range = max - min
         value_range = np.ptp(trues_original)
         # calculate tolerance based on the range
-        overlap_tolerance = max(value_range * overlap_tolerance_factor, 1e-8)
+        overlap_tolerance = value_range * overlap_tolerance_factor
         # calculate a mask based on whether diff <= tolerance
         overlap_mask = np.abs(preds_original - trues_original) <= overlap_tolerance
         # assign overlap value
