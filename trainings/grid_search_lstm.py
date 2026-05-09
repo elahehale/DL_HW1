@@ -118,6 +118,7 @@ def print_progress():
 
 for seq_len in sequence_lengths:
     for scaler in scalers:
+        set_seed(100)
         dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len, scaler=scaler())
         train_loader, val_loader = dataset.get_loaders(batch_size=batch_size)
 
@@ -145,6 +146,7 @@ for seq_len in sequence_lengths:
             for lstm_dropout, hidden_size, num_layer, layer_norm in product(
                 lstm_dropouts, hidden_sizes, num_layers, layernorm_options
             ):
+                set_seed(100)
                 model = LaserLSTM(
                     input_size=1,
                     hidden_size=hidden_size,

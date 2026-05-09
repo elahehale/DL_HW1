@@ -35,6 +35,8 @@ def estimate_remaining_time(
 
 
 def set_seed(seed=42):
+    os.environ["PYTHONHASHSEED"] = str(seed)
+
     random.seed(seed)
     np.random.seed(seed)
 
@@ -44,3 +46,4 @@ def set_seed(seed=42):
 
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    torch.use_deterministic_algorithms(True)

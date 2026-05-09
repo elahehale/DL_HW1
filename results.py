@@ -23,6 +23,7 @@ def reset_weights(m):
 
 
 def get_data_loaders(seq):
+    set_seed(100)
     dataset_80 = LaserData("data/Xtrain.mat", split_ratio=0.8, sequence_length=seq)
     scaler_80 = dataset_80.get_scaler()
     train_loader_80, val_loader_80 = dataset_80.get_loaders()
@@ -35,7 +36,7 @@ def get_data_loaders(seq):
         key="Xtest",
     )
     test_loader_80 = dataset_test_80.get_loaders()
-
+    set_seed(100)
     dataset_100 = LaserData("data/Xtrain.mat", split_ratio=1, sequence_length=seq)
     scaler_100 = dataset_100.get_scaler()
     dataset_test_100 = LaserData(
@@ -48,7 +49,7 @@ def get_data_loaders(seq):
     )
     test_loader_100 = dataset_test_100.get_loaders()
     train_loader_100 = dataset_100.get_loaders()
-
+    set_seed(100)
     dataset_90 = LaserData("data/Xtrain.mat", split_ratio=0.9, sequence_length=seq)
     scaler_90 = dataset_90.get_scaler()
     dataset_test_90 = LaserData(
@@ -172,6 +173,7 @@ models = {
 
 
 def initialize_cnnlstm_model(params, device):
+    set_seed(100)
     model = LaserCNNLSTM(
         seq_length=params["seq"],
         input_channels=1,
@@ -189,6 +191,7 @@ def initialize_cnnlstm_model(params, device):
 
 
 def initialize_cnngru_model(params, device):
+    set_seed(100)
     model = LaserCNNGRU(
         seq_length=params["seq"],
         input_channels=1,
@@ -206,6 +209,7 @@ def initialize_cnngru_model(params, device):
 
 
 def initialize_cnn_model(params, device):
+    set_seed(100)
     model = LaserCNN(
         seq_length=params["seq"],
         num_filters=params["filt"],
@@ -217,6 +221,7 @@ def initialize_cnn_model(params, device):
 
 
 def initialize_gru_model(params, device):
+    set_seed(100)
     model = LaserGRU(
         input_size=1,
         hidden_size=params["hid"],
@@ -230,6 +235,7 @@ def initialize_gru_model(params, device):
 
 
 def initialize_lstm_model(params, device):
+    set_seed(100)
     model = LaserLSTM(
         input_size=1,
         hidden_size=params["hid"],
@@ -264,6 +270,7 @@ TEST_CNN = True
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     set_seed(100)
+
     CNNLSTM_model_path = "out/models/seed100/CNNLSTM_seq45_cnndrop0_lstmdrop0_fcdrop0_lnFalse_ep100_optRMSprop_scaleStandardScaler_lr0.001_wd0.0001_hid32_layers3_kernel3_filters64_schedf0.75_schedp5_mse1.2185.pth"
     CNNGRU_model_path = "out/models/seed100/CNNGRU_seq40_cnndrop0_lstmdrop0_fcdrop0_lnFalse_ep100_optAdamW_scaleStandardScaler_lr0.001_wd0.0001_hid64_layers3_kernel5_filters64_schedf0.75_schedp5_mse0.9875.pth"
     LSTM_model_path = "out/models/seed100/LSTM_seq25_lstmdrop0_fcdrop0.1_lnFalse_ep30_optAdamW_scaleStandardScaler_lr0.0005_wd1e-05_hid64_layers3_schedf0.75_schedp5_mse2.1654.pth"

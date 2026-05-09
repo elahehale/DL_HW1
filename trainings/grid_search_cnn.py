@@ -109,6 +109,7 @@ def print_progress():
 
 for seq_len in sequence_lengths:
     for scaler in scalers:
+        set_seed(100)
         dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len, scaler=scaler())
         train_loader, val_loader = dataset.get_loaders(batch_size=batch_size)
 
@@ -136,6 +137,7 @@ for seq_len in sequence_lengths:
             for cnn_dropout, kernel_size, num_filter in product(
                 cnn_dropouts, kernel_sizes, num_filters
             ):
+                set_seed(100)
                 model = LaserCNN(
                     seq_length=seq_len,
                     num_filters=num_filter,
