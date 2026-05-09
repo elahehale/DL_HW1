@@ -1,6 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 
@@ -60,8 +61,22 @@ def evaluate_model(
         )
 
         plt.figure(figsize=(12, 5))
-        plt.plot(trues_original, label="True", color="tab:blue", linewidth=1)
-        plt.plot(preds_original, label="Predicted", color="tab:orange", linewidth=1)
+        plt.plot(
+            trues_original,
+            label="True",
+            color="tab:blue",
+            marker="o",
+            markersize=3,
+            linewidth=1,
+        )
+        plt.plot(
+            preds_original,
+            label="Predicted",
+            color="tab:orange",
+            marker="o",
+            markersize=3,
+            linewidth=1,
+        )
         plt.plot(
             overlap_values,
             label=f"Overlap (<= {overlap_tolerance:.4g})",
@@ -72,6 +87,7 @@ def evaluate_model(
         plt.title(f"{model.model_name()} Prediction vs True Values")
         plt.xlabel("Time step")
         plt.ylabel("Laser value")
-        plt.show()
+        # plt.show()
+        plt.savefig(os.path.join("out", f"{model.model_name()}_pvst.png"))
 
     return mae, mse
