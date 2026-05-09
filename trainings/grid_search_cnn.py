@@ -56,7 +56,7 @@ scalers =[StandardScaler]
 print(f"{scalers=}")
 ################################ grid search ##################################
 
-set_seed(100)
+set_seed(42)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
@@ -109,9 +109,6 @@ def print_progress():
 
 for seq_len in sequence_lengths:
     for scaler in scalers:
-        set_seed(100)
-        dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len, scaler=scaler())
-        train_loader, val_loader = dataset.get_loaders(batch_size=batch_size)
 
         # common hyperparameters
         for (
@@ -137,7 +134,11 @@ for seq_len in sequence_lengths:
             for cnn_dropout, kernel_size, num_filter in product(
                 cnn_dropouts, kernel_sizes, num_filters
             ):
-                set_seed(100)
+                set_seed(42)
+                dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len, scaler=scaler())
+                train_loader, val_loader = dataset.get_loaders(batch_size=batch_size)
+
+                set_seed(42)
                 model = LaserCNN(
                     seq_length=seq_len,
                     num_filters=num_filter,
