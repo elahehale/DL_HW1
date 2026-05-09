@@ -52,10 +52,15 @@ def evaluate_model(
         print(trues_original[:10])
 
     if draw_predicted_vs_true:
+        # value range = max - min
         value_range = np.ptp(trues_original)
+        # calculate tolerance based on the range
         overlap_tolerance = max(value_range * overlap_tolerance_factor, 1e-8)
-
+        # calculate a mask based on whether diff <= tolerance
         overlap_mask = np.abs(preds_original - trues_original) <= overlap_tolerance
+        # assign overlap value
+        # if within tolerance: midpoint
+        # else: nan (wont draw)
         overlap_values = np.where(
             overlap_mask, (preds_original + trues_original) / 2, np.nan
         )
