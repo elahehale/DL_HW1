@@ -12,7 +12,7 @@ def evaluate_model(
     dataset,
     print_result=False,
     draw_predicted_vs_true=False,
-    overlap_tolerance_factor=0.04,
+    overlap_tolerance_factor=0.2,
 ):
     model.eval()
 
@@ -53,7 +53,8 @@ def evaluate_model(
 
     if draw_predicted_vs_true:
         # value range = max - min
-        value_range = np.ptp(trues_original)
+        # value_range = np.ptp(trues_original)
+        value_range = np.std(trues_original)
         # calculate tolerance based on the range
         overlap_tolerance = value_range * overlap_tolerance_factor
         # calculate a mask based on whether diff <= tolerance

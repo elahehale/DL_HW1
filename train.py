@@ -12,7 +12,7 @@ def plot_loss(losses, type, model, save_name):
 
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.title(f"{model.model_name()} Loss Graph")
+    plt.title(f"{type} Loss Graph")
 
     plt.legend()
     plt.grid(True)
