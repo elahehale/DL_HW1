@@ -17,7 +17,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 ############################ Hyperparameter options ###########################
 
 # ======================= common model hyperparameters =========================
-sequence_lengths = [35, 40, 45]
+sequence_lengths = [ 40, 45]
 print(f"{sequence_lengths=}")
 
 fc_dropouts = [0]
@@ -27,7 +27,7 @@ print(f"{fc_dropouts=}")
 hidden_sizes = [32, 64]
 print(f"{hidden_sizes=}")
 
-num_layers = [3, 4]
+num_layers = [3]
 print(f"{num_layers=}")
 
 layernorm_options = [False]
@@ -50,7 +50,7 @@ print(f"{cnn_dropouts=}")
 epochs = [100]
 print(f"{epochs=}")
 
-optimizers = [AdamW, RMSprop]
+optimizers = [ RMSprop]
 print(f"{optimizers=}")
 
 learning_rates = [1e-3]
@@ -69,7 +69,7 @@ scalers =[StandardScaler]
 print(f"{scalers=}")
 ################################ grid search ##################################
 
-set_seed(100)
+set_seed(42)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 criterion = nn.MSELoss()
@@ -109,7 +109,7 @@ def total_count():
 
 best_cnn_lstm_mse = float("inf")
 best_cnn_lstm_model = None
-best_cnn_lstm_model_name = ""
+best_cnn_lstm_model_name = "cnnlstm/"
 
 start_time = time.time()
 
@@ -130,9 +130,6 @@ def print_progress():
 
 for seq_len in sequence_lengths:
     for scaler in scalers:
-        set_seed(100)
-        dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len, scaler=scaler())
-        train_loader, val_loader = dataset.get_loaders(batch_size=batch_size)
 
         # common hyperparameters
         for (
@@ -172,7 +169,11 @@ for seq_len in sequence_lengths:
                 kernel_sizes,
                 num_filters,
             ):
-                set_seed(100)
+                set_seed(42)
+                dataset = LaserData("data/Xtrain.mat", sequence_length=seq_len, scaler=scaler())
+                train_loader, val_loader = dataset.get_loaders(batch_size=batch_size)
+
+                set_seed(42)
                 model = LaserCNNLSTM(
                     seq_length=seq_len,
                     input_channels=1,

@@ -3,11 +3,11 @@ import os
 from models.base_model import LaserBaseModule
 from util import clear_current_line
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 def plot_loss(losses, type, model, save_name):
     print("save plots")
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(10, 6))
     plt.plot(losses, label=f"{type} Loss")
 
     plt.xlabel("Epoch")
@@ -23,6 +23,24 @@ def plot_loss(losses, type, model, save_name):
     plt.savefig(plot_path, bbox_inches="tight")
     plt.close()
 
+def plot_train_val_loss(train_losses, val_losses, save_name):
+    plt.figure(figsize=(10, 6))
+    input_range = np.arange(0, len(train_losses))
+    plt.plot(input_range, train_losses, label='Train Loss', color='royalblue',
+             marker='o',
+             markersize=3,
+             linewidth=1,
+             alpha=0.8)
+    plt.plot(input_range, val_losses, label='Val Loss', color='crimson',
+             marker='o',
+             markersize=3,
+             linewidth=1,
+             alpha=0.8)
+    plt.title("Train Loss Vs Validation Loss in CNN-GRU")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig(f'out/{save_name}_train_val_loss.png')
 
 def train_model(
     epochs,
@@ -116,6 +134,7 @@ def train_model(
     if plot_losses:
         plot_loss(train_losses, "Train", model, save_name)
         plot_loss(val_losses, "Val", model, save_name)
+        plot_train_val_loss(train_losses, val_losses, model_name)
 
     if save_model:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
